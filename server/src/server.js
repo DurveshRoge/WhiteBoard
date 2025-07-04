@@ -13,6 +13,7 @@ import connectDB from './config/database.js';
 import authRoutes from './routes/auth.js';
 import boardRoutes from './routes/boards.js';
 import userRoutes from './routes/users.js';
+import aiRoutes from './routes/ai.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -37,8 +38,8 @@ connectDB();
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOWMS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 200, // limit each IP to 200 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOWMS) || 60 * 1000, // 1 minute default
+  max: parseInt(process.env.RATE_LIMIT_MAX) || 1000, // limit each IP to 1000 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: {
@@ -51,8 +52,8 @@ const limiter = rateLimit({
 
 // Authentication-specific rate limiter
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // limit each IP to 30 auth requests per windowMs
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 100, // limit each IP to 100 auth requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -85,6 +86,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

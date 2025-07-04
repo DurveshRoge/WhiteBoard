@@ -446,7 +446,122 @@ export const restoreVersion = async (req, res, next) => {
 };
 
 export const exportBoard = async (req, res, next) => {
-  // Implementation for exporting board
+  try {
+    const { id } = req.params;
+    const { format = 'png' } = req.query;
+
+    // Validate board ID
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid board ID'
+      });
+    }
+
+    // Find the board
+    const board = await Board.findById(id)
+      .populate('owner', 'name email')
+      .populate('collaborators.user', 'name email');
+
+    if (!board) {
+      return res.status(404).json({
+        success: false,
+        message: 'Board not found'
+      });
+    }
+
+    // Check access permissions
+    if (!board.hasAccess(req.user.id, 'viewer')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    // Handle different export formats
+    switch (format.toLowerCase()) {
+      case 'json':
+        // Export as JSON data
+        const jsonData = {
+          board: {
+            id: board._id,
+            title: board.title,
+            description: board.description,
+            elements: board.elements,
+            background: board.background,
+            dimensions: board.dimensions,
+            settings: board.settings,
+            createdAt: board.createdAt,
+            updatedAt: board.updatedAt
+          },
+          metadata: {
+            exportedBy: req.user.name,
+            exportedAt: new Date().toISOString(),
+            version: '1.0'
+          }
+        };
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${board.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json"`);
+        res.json(jsonData);
+        break;
+
+      case 'png':
+        // For PNG export, we'll return the board data that the client can render
+        // The actual PNG generation will happen on the client side using canvas
+        res.status(200).json({
+          success: true,
+          message: 'Board data ready for PNG export',
+          data: {
+            board: {
+              id: board._id,
+              title: board.title,
+              elements: board.elements,
+              background: board.background,
+              dimensions: board.dimensions,
+              settings: board.settings
+            },
+            exportFormat: 'png',
+            instructions: 'Use this data to render the board on client-side canvas and export as PNG'
+          }
+        });
+        break;
+
+      case 'pdf':
+        // For PDF export, we'll return the board data that the client can render
+        // The actual PDF generation will happen on the client side
+        res.status(200).json({
+          success: true,
+          message: 'Board data ready for PDF export',
+          data: {
+            board: {
+              id: board._id,
+              title: board.title,
+              elements: board.elements,
+              background: board.background,
+              dimensions: board.dimensions,
+              settings: board.settings
+            },
+            exportFormat: 'pdf',
+            instructions: 'Use this data to render the board on client-side canvas and export as PDF'
+          }
+        });
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid export format. Supported formats: png, pdf, json'
+        });
+    }
+
+    // Log export activity
+    console.log(`📤 Board exported: ${board.title} (${format}) by ${req.user.name}`);
+
+  } catch (error) {
+    console.error('Export error:', error);
+    next(error);
+  }
 };
 
 export const getPublicBoards = async (req, res, next) => {

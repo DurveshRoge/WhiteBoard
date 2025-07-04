@@ -172,7 +172,20 @@ export const setupSocketHandlers = (io) => {
 
         // Update board elements in database
         if (elements) {
-          board.elements = elements;
+          // Ensure all elements have required fields
+          const formattedElements = elements.map(element => ({
+            ...element,
+            createdBy: socket.userId,
+            lastModifiedBy: socket.userId,
+            // Ensure required fields are present
+            x: element.x || 0,
+            y: element.y || 0,
+            type: element.type || element.tool || 'pen',
+            // Convert tool to type for pen elements
+            ...(element.tool === 'pen' && { type: 'pen' })
+          }));
+          
+          board.elements = formattedElements;
           board.lastActivity = new Date();
           await board.save();
         }

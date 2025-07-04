@@ -8,7 +8,7 @@ const elementSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['rectangle', 'circle', 'arrow', 'line', 'pen', 'text', 'sticky']
+    enum: ['rectangle', 'circle', 'arrow', 'line', 'pen', 'text', 'sticky', 'sticky-note', 'table', 'emoji', 'flowchart', 'connector', 'image']
   },
   x: { type: Number, required: true },
   y: { type: Number, required: true },
@@ -34,6 +34,21 @@ const elementSchema = new mongoose.Schema({
   points: [Number],
   // Sticky note properties
   stickyColor: String,
+  // Table properties
+  rows: Number,
+  cols: Number,
+  cellWidth: Number,
+  cellHeight: Number,
+  // Emoji properties
+  emoji: String,
+  // Flowchart properties
+  flowchartType: String,
+  label: String,
+  // Connector properties
+  endX: Number,
+  endY: Number,
+  // Image properties
+  src: String,
   // Layer information
   zIndex: { type: Number, default: 0 },
   // Metadata

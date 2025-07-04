@@ -1,0 +1,491 @@
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize AI services with fallbacks
+let openai = null;
+let genAI = null;
+
+// Initialize OpenAI if API key is available
+if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
+  try {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    console.log('✅ OpenAI initialized successfully');
+  } catch (error) {
+    console.warn('⚠️ Failed to initialize OpenAI:', error.message);
+  }
+} else {
+  console.warn('⚠️ OpenAI API key not configured - AI features will be limited');
+}
+
+// Initialize Google Gemini if API key is available
+if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here') {
+  try {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    console.log('✅ Google Gemini initialized successfully');
+  } catch (error) {
+    console.warn('⚠️ Failed to initialize Google Gemini:', error.message);
+  }
+} else {
+  console.warn('⚠️ Google Gemini API key not configured - AI features will be limited');
+}
+
+// AI Service class
+class AIService {
+
+  // Generate drawing suggestions based on text description
+  async generateDrawingSuggestions(description, boardContext = '') {
+    // Check if OpenAI is available
+    if (!openai) {
+      return {
+        suggestions: [
+          {
+            type: 'rectangle',
+            position: { x: 100, y: 100 },
+            properties: { width: 120, height: 60, text: 'Add your content here' },
+            explanation: 'A basic rectangle for organizing content'
+          },
+          {
+            type: 'text',
+            position: { x: 100, y: 200 },
+            properties: { text: 'Add descriptive text', fontSize: 16 },
+            explanation: 'Text element for labels and descriptions'
+          },
+          {
+            type: 'arrow',
+            position: { x: 100, y: 300 },
+            properties: { points: [0, 0, 100, 0] },
+            explanation: 'Arrow to show flow or direction'
+          }
+        ],
+        message: 'AI features not configured - showing basic suggestions'
+      };
+    }
+
+    try {
+      const prompt = `
+        Given this whiteboard context: "${boardContext}"
+        And this user request: "${description}"
+        
+        Please suggest 3-5 drawing elements that would be helpful to add to the whiteboard.
+        For each suggestion, provide:
+        - Element type (rectangle, circle, line, arrow, text)
+        - Position suggestion (x, y coordinates)
+        - Content or properties
+        - Brief explanation of why it's useful
+        
+        Format the response as JSON with this structure:
+        {
+          "suggestions": [
+            {
+              "type": "element_type",
+              "position": {"x": 100, "y": 100},
+              "properties": {...},
+              "explanation": "Why this element is useful"
+            }
+          ]
+        }
+      `;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "You are an AI assistant that helps users create better whiteboard diagrams. Provide practical, actionable suggestions for drawing elements."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      });
+
+      const response = completion.choices[0].message.content;
+      
+      try {
+        return JSON.parse(response);
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError);
+        return {
+          suggestions: [],
+          error: 'Failed to parse AI response'
+        };
+      }
+    } catch (error) {
+      console.error('AI suggestion generation error:', error);
+      throw new Error('Failed to generate drawing suggestions');
+    }
+  }
+
+  // Generate flowchart from text description
+  async generateFlowchart(description) {
+    // Check if OpenAI is available
+    if (!openai) {
+      return {
+        nodes: [
+          { id: "start", type: "circle", text: "Start", position: { x: 100, y: 50 }, width: 80, height: 80 },
+          { id: "process1", type: "rectangle", text: "Process 1", position: { x: 100, y: 150 }, width: 120, height: 60 },
+          { id: "decision", type: "diamond", text: "Decision", position: { x: 100, y: 250 }, width: 100, height: 80 },
+          { id: "process2", type: "rectangle", text: "Process 2", position: { x: 100, y: 350 }, width: 120, height: 60 },
+          { id: "end", type: "circle", text: "End", position: { x: 100, y: 450 }, width: 80, height: 80 }
+        ],
+        connections: [
+          { from: "start", to: "process1", label: "Next" },
+          { from: "process1", to: "decision", label: "Next" },
+          { from: "decision", to: "process2", label: "Yes" },
+          { from: "decision", to: "end", label: "No" },
+          { from: "process2", to: "end", label: "Next" }
+        ],
+        message: 'AI features not configured - showing basic flowchart template'
+      };
+    }
+
+    try {
+      const prompt = `
+        Create a flowchart based on this description: "${description}"
+        
+        Generate a JSON structure representing the flowchart with:
+        - Nodes (rectangles, diamonds, circles)
+        - Connections (arrows between nodes)
+        - Text content for each node
+        - Logical flow
+        
+        Format as:
+        {
+          "nodes": [
+            {
+              "id": "node1",
+              "type": "rectangle|diamond|circle",
+              "text": "Node text",
+              "position": {"x": 100, "y": 100},
+              "width": 120,
+              "height": 60
+            }
+          ],
+          "connections": [
+            {
+              "from": "node1",
+              "to": "node2",
+              "label": "Yes/No/Next"
+            }
+          ]
+        }
+      `;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert at creating flowcharts and process diagrams. Generate clear, logical flowcharts based on user descriptions."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 1000
+      });
+
+      const response = completion.choices[0].message.content;
+      
+      try {
+        return JSON.parse(response);
+      } catch (parseError) {
+        console.error('Failed to parse flowchart response:', parseError);
+        return {
+          nodes: [],
+          connections: [],
+          error: 'Failed to parse flowchart response'
+        };
+      }
+    } catch (error) {
+      console.error('Flowchart generation error:', error);
+      throw new Error('Failed to generate flowchart');
+    }
+  }
+
+  // Analyze board content and provide insights
+  async analyzeBoardContent(elements, boardTitle = '') {
+    // Check if OpenAI is available
+    if (!openai) {
+      return {
+        analysis: {
+          type: 'general',
+          suggestions: [
+            'Add more descriptive text to explain your ideas',
+            'Use different shapes to organize information',
+            'Connect related elements with arrows or lines',
+            'Consider adding a title or legend'
+          ],
+          missingElements: [
+            'Title or heading',
+            'Descriptive labels',
+            'Connections between elements'
+          ],
+          organization: 'Group related elements together and use consistent spacing'
+        },
+        message: 'AI features not configured - showing basic analysis'
+      };
+    }
+
+    try {
+      const elementSummary = elements.map(el => ({
+        type: el.type,
+        content: el.text || el.tool || 'drawing',
+        position: { x: el.x, y: el.y }
+      }));
+
+      const prompt = `
+        Analyze this whiteboard content:
+        Title: "${boardTitle}"
+        Elements: ${JSON.stringify(elementSummary)}
+        
+        Provide insights about:
+        1. What type of diagram/board this appears to be
+        2. Suggestions for improvement
+        3. Missing elements that might be useful
+        4. Organization recommendations
+        
+        Format as JSON:
+        {
+          "analysis": {
+            "type": "flowchart|mindmap|wireframe|other",
+            "suggestions": ["suggestion1", "suggestion2"],
+            "missingElements": ["element1", "element2"],
+            "organization": "recommendations"
+          }
+        }
+      `;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert at analyzing diagrams and whiteboards. Provide helpful insights and suggestions for improvement."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 600
+      });
+
+      const response = completion.choices[0].message.content;
+      
+      try {
+        return JSON.parse(response);
+      } catch (parseError) {
+        console.error('Failed to parse analysis response:', parseError);
+        return {
+          analysis: {
+            type: 'unknown',
+            suggestions: [],
+            missingElements: [],
+            organization: 'Unable to analyze'
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Board analysis error:', error);
+      throw new Error('Failed to analyze board content');
+    }
+  }
+
+  // Generate text suggestions for text elements
+  async generateTextSuggestions(context, currentText = '') {
+    // Check if OpenAI is available
+    if (!openai) {
+      return {
+        suggestions: [
+          {
+            text: 'Clear and concise title',
+            reason: 'More professional and descriptive'
+          },
+          {
+            text: 'Action-oriented description',
+            reason: 'Encourages engagement and clarity'
+          },
+          {
+            text: 'Key point or highlight',
+            reason: 'Emphasizes important information'
+          }
+        ],
+        message: 'AI features not configured - showing basic text suggestions'
+      };
+    }
+
+    try {
+      const prompt = `
+        Context: "${context}"
+        Current text: "${currentText}"
+        
+        Suggest 3-5 alternative or improved text options for this context.
+        Consider:
+        - Clarity and conciseness
+        - Professional tone
+        - Action-oriented language
+        - Context relevance
+        
+        Format as JSON:
+        {
+          "suggestions": [
+            {
+              "text": "suggestion text",
+              "reason": "why this is better"
+            }
+          ]
+        }
+      `;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert at writing clear, professional text for diagrams and presentations."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 300
+      });
+
+      const response = completion.choices[0].message.content;
+      
+      try {
+        return JSON.parse(response);
+      } catch (parseError) {
+        console.error('Failed to parse text suggestions:', parseError);
+        return {
+          suggestions: [],
+          error: 'Failed to parse text suggestions'
+        };
+      }
+    } catch (error) {
+      console.error('Text suggestion error:', error);
+      throw new Error('Failed to generate text suggestions');
+    }
+  }
+
+  // Use Gemini for image analysis (if board has images)
+  async analyzeImageWithGemini(imageData) {
+    // Check if Gemini is available
+    if (!genAI) {
+      return {
+        analysis: 'Image analysis not available - AI features not configured',
+        suggestions: [
+          'Consider adding descriptive text to your diagram',
+          'Use different colors to organize information',
+          'Add arrows or lines to show relationships'
+        ]
+      };
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+      
+      const result = await model.generateContent([
+        "Analyze this whiteboard image and describe what you see. Provide suggestions for improvement.",
+        imageData
+      ]);
+      
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      console.error('Gemini image analysis error:', error);
+      throw new Error('Failed to analyze image with Gemini');
+    }
+  }
+
+  // Generate color scheme suggestions
+  async generateColorSuggestions(boardType = 'general') {
+    // Check if OpenAI is available
+    if (!openai) {
+      return {
+        colorScheme: {
+          primary: '#2563eb',
+          secondary: '#7c3aed',
+          background: '#ffffff',
+          text: '#1f2937',
+          accent: '#f59e0b'
+        },
+        description: 'Professional blue and purple color scheme',
+        message: 'AI features not configured - showing default color scheme'
+      };
+    }
+
+    try {
+      const prompt = `
+        Suggest a professional color scheme for a ${boardType} whiteboard.
+        Include:
+        - Primary colors for main elements
+        - Secondary colors for highlights
+        - Background color
+        - Text colors
+        
+        Format as JSON:
+        {
+          "colorScheme": {
+            "primary": "#hexcode",
+            "secondary": "#hexcode",
+            "background": "#hexcode",
+            "text": "#hexcode",
+            "accent": "#hexcode"
+          },
+          "description": "Why this color scheme works well"
+        }
+      `;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert at color theory and design. Suggest professional, accessible color schemes."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 200
+      });
+
+      const response = completion.choices[0].message.content;
+      
+      try {
+        return JSON.parse(response);
+      } catch (parseError) {
+        console.error('Failed to parse color suggestions:', parseError);
+        return {
+          colorScheme: {
+            primary: '#2563eb',
+            secondary: '#7c3aed',
+            background: '#ffffff',
+            text: '#1f2937',
+            accent: '#f59e0b'
+          },
+          description: 'Default professional color scheme'
+        };
+      }
+    } catch (error) {
+      console.error('Color suggestion error:', error);
+      throw new Error('Failed to generate color suggestions');
+    }
+  }
+}
+
+export default new AIService(); 
