@@ -35,3 +35,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# New files
+README.md
+REMAINING_TASKS.md
+SETUP_COMPLETE.md

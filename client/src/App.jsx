@@ -51,8 +51,37 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="text-center">
+          {/* Logo Animation */}
+          <div className="relative mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse">
+              <span className="text-white font-bold text-3xl">W</span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-2xl opacity-0 animate-ping"></div>
+          </div>
+          
+          {/* Loading Text */}
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+            WhiteBoard
+          </h2>
+          <p className="text-gray-600 mb-8">Loading your workspace...</p>
+          
+          {/* Loading Spinner */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-gray-200 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-12 h-12 border-4 border-blue-500 rounded-full animate-spin border-t-transparent"></div>
+            </div>
+          </div>
+          
+          {/* Loading Dots */}
+          <div className="flex justify-center mt-6 space-x-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+            <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          </div>
+        </div>
       </div>
     );
   }
