@@ -1,4 +1,7 @@
 const UserCursors = ({ userCursors, activeUsers, user, zoom, stagePos }) => {
+  // Add null check for userCursors
+  if (!userCursors) return null;
+  
   return Object.entries(userCursors).map(([userId, cursor]) => {
     // Don't show our own cursor
     if (userId === user?.id) return null;

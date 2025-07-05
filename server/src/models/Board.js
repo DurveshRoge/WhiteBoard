@@ -90,6 +90,10 @@ const boardSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  archived: {
+    type: Boolean,
+    default: false
+  },
   thumbnail: String,
   background: {
     color: { type: String, default: '#ffffff' },
@@ -173,7 +177,38 @@ const boardSchema = new mongoose.Schema({
     type: String,
     enum: ['business', 'education', 'design', 'flowchart', 'mindmap', 'other'],
     default: 'other'
-  }
+  },
+  // Comments
+  comments: [{
+    id: { type: String, required: true },
+    text: { type: String, required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    userName: { type: String, required: true },
+    userAvatar: String,
+    elementId: String, // If comment is attached to a specific element
+    position: {
+      x: Number,
+      y: Number
+    },
+    timestamp: { type: Date, default: Date.now },
+    lastEdited: Date,
+    replies: [{
+      id: { type: String, required: true },
+      text: { type: String, required: true },
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      userName: { type: String, required: true },
+      userAvatar: String,
+      timestamp: { type: Date, default: Date.now }
+    }]
+  }]
 }, {
   timestamps: true
 });

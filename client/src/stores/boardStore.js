@@ -321,4 +321,45 @@ export const useBoardStore = create((set, get) => ({
 
   // Clear errors
   clearError: () => set({ error: null }),
+
+  // Archive a board
+  archiveBoard: async (boardId) => {
+    try {
+      const response = await axios.post(`/boards/${boardId}/archive`);
+      const updatedBoard = response.data.data;
+      // Update board in state
+      set((state) => ({
+        boards: state.boards.map(board => board._id === boardId ? updatedBoard : board),
+        currentBoard: state.currentBoard?._id === boardId ? updatedBoard : state.currentBoard
+      }));
+      return { success: true, board: updatedBoard };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Failed to archive board' };
+    }
+  },
+
+  // Restore a board
+  restoreBoard: async (boardId) => {
+    try {
+      const response = await axios.post(`/boards/${boardId}/restore`);
+      const updatedBoard = response.data.data;
+      set((state) => ({
+        boards: state.boards.map(board => board._id === boardId ? updatedBoard : board),
+        currentBoard: state.currentBoard?._id === boardId ? updatedBoard : state.currentBoard
+      }));
+      return { success: true, board: updatedBoard };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Failed to restore board' };
+    }
+  },
+
+  // Get board analytics
+  getBoardAnalytics: async (boardId) => {
+    try {
+      const response = await axios.get(`/boards/${boardId}/analytics`);
+      return { success: true, analytics: response.data.analytics };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Failed to fetch analytics' };
+    }
+  },
 }));

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Stage, Layer, Line, Rect, Circle, Text, Arrow, Group, Transformer, Image, RegularPolygon } from 'react-konva';
 import { useBoardStore } from '../stores/boardStore';
@@ -10,6 +10,9 @@ import ChatPanel from '../components/whiteboard/ChatPanel';
 import UserCursors from '../components/whiteboard/UserCursors';
 import AIAssistant from '../components/whiteboard/AIAssistant';
 import ShareModal from '../components/whiteboard/ShareModal';
+import VoiceChat from '../components/whiteboard/VoiceChat';
+import Comments from '../components/whiteboard/Comments';
+import BoardTemplates from '../components/whiteboard/BoardTemplates';
 import { 
   exportBoardData, 
   canvasToPNG, 
@@ -40,10 +43,15 @@ import {
   TableCellsIcon,
   FaceSmileIcon,
   Square3Stack3DIcon,
-  LinkIcon
+  LinkIcon,
+  MicrophoneIcon,
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
+import * as pdfjsLib from "pdfjs-dist";
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const WhiteboardPage = () => {
+  // All hooks must be declared here, before any return statement
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -65,6 +73,14 @@ const WhiteboardPage = () => {
   const [messageText, setMessageText] = useState('');
   const [activeUsers, setActiveUsers] = useState([]);
   const [userCursors, setUserCursors] = useState({});
+  
+  // Voice chat and comments state
+  const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [selectedElementId, setSelectedElementId] = useState(null);
+  
+  // Templates state
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   
   // Drawing settings
   const [strokeColor, setStrokeColor] = useState('#000000');
@@ -128,6 +144,499 @@ const WhiteboardPage = () => {
   
   // Add drag-to-select (selection box)
   const [selectionBox, setSelectionBox] = useState(null);
+  
+  // Import modal state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  
+  // Window size state
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+  
+  // Stage dimensions
+  const stageWidth = windowSize.width - (isSidebarOpen ? 256 : 0);
+  const stageHeight = windowSize.height - 64;
+  
+  // Save current state to history - must be defined before useCallback hooks that use it
+  const saveToHistory = () => {
+    // Only save if something changed
+    if (historyStep < history.length - 1) {
+      // Discard future states
+      const newHistory = history.slice(0, historyStep + 1);
+      setHistory([
+        ...newHistory,
+        { lines: [...lines], shapes: [...shapes] }
+      ]);
+      setHistoryStep(historyStep + 1);
+    } else {
+      setHistory([
+        ...history,
+        { lines: [...lines], shapes: [...shapes] }
+      ]);
+      setHistoryStep(historyStep + 1);
+    }
+  };
+  
+  // Handle delete selected elements - must be defined before useCallback hooks that use it
+  const handleDeleteSelected = useCallback(() => {
+    if (!selectedIds.length) return;
+    
+    // Remove selected elements from state
+    setShapes(prev => prev.filter(shape => !selectedIds.includes(shape.id)));
+    setLines(prev => prev.filter(line => !selectedIds.includes(line.id)));
+    
+    // Emit delete events to socket for each deleted element
+    if (socketRef.current && socketRef.current.connected) {
+      try {
+        selectedIds.forEach(elementId => {
+          socketRef.current.emit('drawing-update', {
+            elements: [],
+            action: 'delete',
+            elementId: elementId
+          });
+        });
+      } catch (error) {
+        console.warn('Socket emit failed:', error);
+      }
+    }
+    
+    // Clear selection
+    setSelectedIds([]);
+    
+    // Save to history for undo/redo
+    saveToHistory();
+    
+    // Show feedback
+    toast.success(`Deleted ${selectedIds.length} element${selectedIds.length > 1 ? 's' : ''}`);
+  }, [selectedIds, socketRef, saveToHistory]);
+
+  // After all useState/useRef declarations, but before useEffect hooks:
+
+  // Select all elements
+  const handleSelectAll = useCallback(() => {
+    const allIds = [
+      ...shapes.map(shape => shape.id),
+      ...lines.map(line => line.id)
+    ];
+    setSelectedIds(allIds);
+    toast.success(`Selected ${allIds.length} elements`);
+  }, [shapes, lines]);
+
+  // Copy selected elements
+  const handleCopy = useCallback(() => {
+    if (!selectedIds.length) {
+      toast.error('No elements selected to copy');
+      return;
+    }
+    const selectedShapes = shapes.filter(shape => selectedIds.includes(shape.id));
+    const selectedLines = lines.filter(line => selectedIds.includes(line.id));
+    setClipboard({
+      shapes: selectedShapes,
+      lines: selectedLines
+    });
+    // Calculate center of selection for offset
+    const allElements = [...selectedShapes, ...selectedLines];
+    if (allElements.length > 0) {
+      const centerX = allElements.reduce((sum, el) => sum + (el.x || 0), 0) / allElements.length;
+      const centerY = allElements.reduce((sum, el) => sum + (el.y || 0), 0) / allElements.length;
+      setClipboardOffset({ x: centerX, y: centerY });
+    }
+    toast.success(`Copied ${selectedIds.length} element${selectedIds.length > 1 ? 's' : ''}`);
+  }, [selectedIds, shapes, lines]);
+
+  // Paste elements
+  const handlePaste = useCallback(() => {
+    if (!clipboard) {
+      toast.error('Nothing to paste');
+      return;
+    }
+    const offset = 20; // Offset for pasted elements
+    const newElements = [];
+    clipboard.shapes.forEach(shape => {
+      const newShape = {
+        ...shape,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        x: shape.x + offset,
+        y: shape.y + offset
+      };
+      newElements.push(newShape);
+    });
+    clipboard.lines.forEach(line => {
+      const newLine = {
+        ...line,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        points: line.points ? line.points.map((point, index) => 
+          index % 2 === 0 ? point + offset : point + offset
+        ) : line.points
+      };
+      newElements.push(newLine);
+    });
+    const newShapes = newElements.filter(el => el.type !== 'pen');
+    const newLines = newElements.filter(el => el.type === 'pen');
+    setShapes(prev => [...prev, ...newShapes]);
+    setLines(prev => [...prev, ...newLines]);
+    const newIds = newElements.map(el => el.id);
+    setSelectedIds(newIds);
+    if (socketRef.current && socketRef.current.connected) {
+      try {
+        socketRef.current.emit('drawing-update', {
+          elements: newElements,
+          action: 'paste',
+          elementIds: newIds
+        });
+      } catch (error) {
+        console.warn('Socket emit failed:', error);
+      }
+    }
+    saveToHistory();
+    toast.success(`Pasted ${newElements.length} element${newElements.length > 1 ? 's' : ''}`);
+  }, [clipboard, socketRef, saveToHistory]);
+
+  // Cut selected elements
+  const handleCut = useCallback(() => {
+    if (!selectedIds.length) {
+      toast.error('No elements selected to cut');
+      return;
+    }
+    handleCopy();
+    handleDeleteSelected();
+    toast.success(`Cut ${selectedIds.length} element${selectedIds.length > 1 ? 's' : ''}`);
+  }, [selectedIds, handleCopy, handleDeleteSelected]);
+
+  // Duplicate selected elements
+  const handleDuplicate = useCallback(() => {
+    if (!selectedIds.length) {
+      toast.error('No elements selected to duplicate');
+      return;
+    }
+    handleCopy();
+    handlePaste();
+  }, [selectedIds, handleCopy, handlePaste]);
+
+  // Function to check if the user has access to the board
+  const checkBoardAccess = useCallback(async (boardId) => {
+    console.log('Checking board access directly');
+    const accessResult = await useBoardStore.getState().checkBoardAccess(boardId);
+    console.log('Direct board access check result:', accessResult);
+    return accessResult.success && accessResult.accessible;
+  }, []);
+
+  // All useEffect hooks must be here, before any function definitions or early returns
+  useEffect(() => {
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 2;
+    let timeoutId;
+    
+    if (id && !loadAttempted) {
+      const loadBoard = async () => {
+        try {
+          // Don't retry too many times
+          if (retryCount >= maxRetries) {
+            console.error('Max retries reached for loading board');
+            toast.error('Unable to load whiteboard after multiple attempts');
+            navigate('/dashboard');
+            return;
+          }
+          
+          retryCount++;
+          setLoadAttempted(true);
+          
+          console.log('Loading whiteboard - ID:', id);
+          
+          // Ensure auth token is set in headers
+          const { useAuthStore } = await import('../stores/authStore');
+          const { token, user, setAuthToken, initializeAuth, refreshSession } = useAuthStore.getState();
+          
+          console.log('Current auth state:', { 
+            hasToken: !!token, 
+            hasUser: !!user, 
+            userId: user?.id 
+          });
+          
+          // If we don't have a user or token, make sure auth is initialized first
+          if (!token || !user) {
+            console.log('No valid authentication, initializing auth');
+            const authResult = await initializeAuth();
+            console.log('Auth initialization result:', authResult);
+            
+            // If initialization failed and we still don't have a user, redirect to login
+            if (!authResult.success && !useAuthStore.getState().user) {
+              console.error('Authentication failed');
+              toast.error('Authentication required');
+              navigate('/login', { state: { from: `/whiteboard/${id}` } });
+              return;
+            }
+          }
+          
+          // Get fresh auth state after initialization
+          const { token: newToken, user: newUser } = useAuthStore.getState();
+          
+          console.log('Auth state after initialization:', { 
+            hasToken: !!newToken, 
+            hasUser: !!newUser,
+            userId: newUser?.id
+          });
+          
+          // If still not authenticated after initialization, redirect
+          if (!newToken || !newUser) {
+            console.error('Still not authenticated after initialization');
+            toast.error('Please log in to access this board');
+            navigate('/login', { state: { from: `/whiteboard/${id}` } });
+            return;
+          }
+          
+          console.log('Setting auth token before board request');
+          setAuthToken(newToken);
+          
+          // Double check the auth header is set
+          const authHeader = axios.defaults.headers.common['Authorization'];
+          console.log('Authorization header is set:', !!authHeader);
+          if (authHeader) {
+            console.log('Auth header format correct:', authHeader.startsWith('Bearer '));
+          }
+          
+          // Try to load the board
+          console.log('Attempting to load board with ID:', id);
+          const result = await getBoard(id);
+          
+          if (!isMounted) return;
+          
+          if (!result.success) {
+            if (result.error === 'Request throttled to prevent infinite loop') {
+              // This is our throttling mechanism, just stop retrying
+              console.log('Request throttled');
+              
+              // Try again after a delay
+              if (retryCount < maxRetries) {
+                timeoutId = setTimeout(() => {
+                  setLoadAttempted(false); // Allow another attempt
+                }, 2000);
+              }
+              return;
+            }
+            
+            console.error('Failed to load board:', result.error);
+            
+            // If we got a 403, it might be a permission issue or expired token
+            if (result.error?.includes('Access denied') || 
+                result.error?.includes('not authorized') || 
+                result.error?.includes('403')) {
+              
+              console.log('Access denied, checking if token needs refresh');
+              
+              // Try to refresh the session
+              const refreshResult = await refreshSession();
+              
+              if (refreshResult.success) {
+                console.log('Session refreshed, performing direct access check');
+                
+                // Do a direct check to see if we can access this board
+                const hasAccess = await checkBoardAccess(id);
+                
+                if (hasAccess) {
+                  console.log('Direct access check succeeded, retrying board load');
+                  setLoadAttempted(false); // Allow another attempt
+                  return;
+                } else {
+                  console.error('Direct access check failed - no permission');
+                  toast.error('You do not have permission to access this board');
+                  navigate('/dashboard');
+                  return;
+                }
+              } else {
+                // If refresh failed, it's likely a genuine permission issue
+                console.error('Permission denied even after refresh');
+                toast.error('You do not have permission to access this board');
+                navigate('/dashboard');
+                return;
+              }
+            }
+            
+            toast.error(result.error || 'Failed to load whiteboard');
+            
+            // For other errors, retry after a delay if we haven't reached max retries
+            if (retryCount < maxRetries) {
+              timeoutId = setTimeout(() => {
+                setLoadAttempted(false); // Allow another attempt
+              }, 1000);
+            }
+          } else {
+            console.log('Board loaded successfully');
+            // If we got here, the board loaded successfully
+          }
+        } catch (error) {
+          if (!isMounted) return;
+          console.error('Error loading board:', error);
+          toast.error('Failed to load whiteboard');
+          
+          if (retryCount >= maxRetries) {
+            navigate('/dashboard');
+          } else {
+            timeoutId = setTimeout(() => {
+              setLoadAttempted(false); // Allow another attempt
+            }, 1000);
+          }
+        }
+      };
+      
+      loadBoard();
+    }
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [id, getBoard, navigate, user?.id, loadAttempted, checkBoardAccess]);
+
+  // Initialize socket when component mounts and user/board is available
+  useEffect(() => {
+    if (user && id && currentBoard) {
+      initializeSocket();
+    }
+    
+    return () => {
+      // Clean up socket connection when component unmounts
+      if (socketRef.current) {
+        console.log('Closing socket connection');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [id, user, currentBoard]);
+
+  useEffect(() => {
+    console.log('WhiteboardPage mounted');
+    console.log('Initial state:', { lines, shapes, tool, zoom, stagePos });
+    
+    return () => {
+      console.log('WhiteboardPage unmounted');
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Update Transformer to attach to all selected nodes
+  useEffect(() => {
+    if (selectedIds.length && transformerRef.current && stageRef.current) {
+      const stage = stageRef.current;
+      const nodes = selectedIds.map(id => stage.findOne(`#${id}`)).filter(Boolean);
+      transformerRef.current.nodes(nodes);
+      transformerRef.current.getLayer().batchDraw();
+    } else if (transformerRef.current) {
+      transformerRef.current.nodes([]);
+      transformerRef.current.getLayer().batchDraw();
+    }
+  }, [selectedIds]);
+
+  // Update keyboard support for multi-select and clipboard operations
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't handle keyboard events if text editing is active
+      if (isTextEditing) return;
+      
+      // Global shortcuts (work even without selection)
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case 'a':
+            e.preventDefault();
+            handleSelectAll();
+            return;
+          case 'c':
+            e.preventDefault();
+            if (selectedIds.length) handleCopy();
+            return;
+          case 'v':
+            e.preventDefault();
+            handlePaste();
+            return;
+          case 'x':
+            e.preventDefault();
+            if (selectedIds.length) handleCut();
+            return;
+          case 'd':
+            e.preventDefault();
+            if (selectedIds.length) handleDuplicate();
+            return;
+        }
+      }
+      
+      if (!selectedIds.length) return;
+      let updated = false;
+      if (["Delete", "Backspace"].includes(e.key)) {
+        // Remove selected elements from state
+        setShapes(prev => prev.filter(shape => !selectedIds.includes(shape.id)));
+        setLines(prev => prev.filter(line => !selectedIds.includes(line.id)));
+        
+        // Emit delete events to socket for each deleted element
+        if (socketRef.current && socketRef.current.connected) {
+          try {
+            selectedIds.forEach(elementId => {
+              socketRef.current.emit('drawing-update', {
+                elements: [],
+                action: 'delete',
+                elementId: elementId
+              });
+            });
+          } catch (error) {
+            console.warn('Socket emit failed:', error);
+          }
+        }
+        
+        setSelectedIds([]);
+        saveToHistory();
+        updated = true;
+      } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        setShapes(prev => prev.map(shape => {
+          if (!selectedIds.includes(shape.id)) return shape;
+          const step = e.shiftKey ? 10 : 1;
+          switch (e.key) {
+            case 'ArrowUp': return { ...shape, y: (shape.y || 0) - step };
+            case 'ArrowDown': return { ...shape, y: (shape.y || 0) + step };
+            case 'ArrowLeft': return { ...shape, x: (shape.x || 0) - step };
+            case 'ArrowRight': return { ...shape, x: (shape.x || 0) + step };
+            default: return shape;
+          }
+        }));
+        setLines(prev => prev.map(line => {
+          if (!selectedIds.includes(line.id)) return line;
+          const step = e.shiftKey ? 10 : 1;
+          if (line.points) {
+            let newPoints = [...line.points];
+            switch (e.key) {
+              case 'ArrowUp': newPoints = newPoints.map((p, i) => i % 2 === 1 ? p - step : p); break;
+              case 'ArrowDown': newPoints = newPoints.map((p, i) => i % 2 === 1 ? p + step : p); break;
+              case 'ArrowLeft': newPoints = newPoints.map((p, i) => i % 2 === 0 ? p - step : p); break;
+              case 'ArrowRight': newPoints = newPoints.map((p, i) => i % 2 === 0 ? p + step : p); break;
+              default: break;
+            }
+            return { ...line, points: newPoints };
+          }
+          return line;
+        }));
+        updated = true;
+      }
+      if (updated) {
+        // Optionally, emit update to socket here
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIds, handleSelectAll, handleCopy, handlePaste, handleCut, handleDuplicate]);
   
   // Connect to socket
   const initializeSocket = async () => {
@@ -348,250 +857,6 @@ const WhiteboardPage = () => {
     }
   };
   
-
-  
-  useEffect(() => {
-    let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 2;
-    let timeoutId;
-    
-    if (id && !loadAttempted) {
-      const loadBoard = async () => {
-        try {
-          // Don't retry too many times
-          if (retryCount >= maxRetries) {
-            console.error('Max retries reached for loading board');
-            toast.error('Unable to load whiteboard after multiple attempts');
-            navigate('/dashboard');
-            return;
-          }
-          
-          retryCount++;
-          setLoadAttempted(true);
-          
-          console.log('Loading whiteboard - ID:', id);
-          
-          // Ensure auth token is set in headers
-          const { useAuthStore } = await import('../stores/authStore');
-          const { token, user, setAuthToken, initializeAuth, refreshSession } = useAuthStore.getState();
-          
-          console.log('Current auth state:', { 
-            hasToken: !!token, 
-            hasUser: !!user, 
-            userId: user?.id 
-          });
-          
-          // If we don't have a user or token, make sure auth is initialized first
-          if (!token || !user) {
-            console.log('No valid authentication, initializing auth');
-            const authResult = await initializeAuth();
-            console.log('Auth initialization result:', authResult);
-            
-            // If initialization failed and we still don't have a user, redirect to login
-            if (!authResult.success && !useAuthStore.getState().user) {
-              console.error('Authentication failed');
-              toast.error('Authentication required');
-              navigate('/login', { state: { from: `/whiteboard/${id}` } });
-              return;
-            }
-          }
-          
-          // Get fresh auth state after initialization
-          const { token: newToken, user: newUser } = useAuthStore.getState();
-          
-          console.log('Auth state after initialization:', { 
-            hasToken: !!newToken, 
-            hasUser: !!newUser,
-            userId: newUser?.id
-          });
-          
-          // If still not authenticated after initialization, redirect
-          if (!newToken || !newUser) {
-            console.error('Still not authenticated after initialization');
-            toast.error('Please log in to access this board');
-            navigate('/login', { state: { from: `/whiteboard/${id}` } });
-            return;
-          }
-          
-          console.log('Setting auth token before board request');
-          setAuthToken(newToken);
-          
-          // Double check the auth header is set
-          const authHeader = axios.defaults.headers.common['Authorization'];
-          console.log('Authorization header is set:', !!authHeader);
-          if (authHeader) {
-            console.log('Auth header format correct:', authHeader.startsWith('Bearer '));
-          }
-          
-          // Try to load the board
-          console.log('Attempting to load board with ID:', id);
-          const result = await getBoard(id);
-          
-          if (!isMounted) return;
-          
-          if (!result.success) {
-            if (result.error === 'Request throttled to prevent infinite loop') {
-              // This is our throttling mechanism, just stop retrying
-              console.log('Request throttled');
-              
-              // Try again after a delay
-              if (retryCount < maxRetries) {
-                timeoutId = setTimeout(() => {
-                  setLoadAttempted(false); // Allow another attempt
-                }, 2000);
-              }
-              return;
-            }
-            
-            console.error('Failed to load board:', result.error);
-            
-            // If we got a 403, it might be a permission issue or expired token
-            if (result.error?.includes('Access denied') || 
-                result.error?.includes('not authorized') || 
-                result.error?.includes('403')) {
-              
-              console.log('Access denied, checking if token needs refresh');
-              
-              // Try to refresh the session
-              const refreshResult = await refreshSession();
-              
-              if (refreshResult.success) {
-                console.log('Session refreshed, performing direct access check');
-                
-                // Do a direct check to see if we can access this board
-                const hasAccess = await checkBoardAccess(id);
-                
-                if (hasAccess) {
-                  console.log('Direct access check succeeded, retrying board load');
-                  setLoadAttempted(false); // Allow another attempt
-                  return;
-                } else {
-                  console.error('Direct access check failed - no permission');
-                  toast.error('You do not have permission to access this board');
-                  navigate('/dashboard');
-                  return;
-                }
-              } else {
-                // If refresh failed, it's likely a genuine permission issue
-                console.error('Permission denied even after refresh');
-                toast.error('You do not have permission to access this board');
-                navigate('/dashboard');
-                return;
-              }
-            }
-            
-            toast.error(result.error || 'Failed to load whiteboard');
-            
-            // For other errors, retry after a delay if we haven't reached max retries
-            if (retryCount < maxRetries) {
-              timeoutId = setTimeout(() => {
-                setLoadAttempted(false); // Allow another attempt
-              }, 1000);
-            }
-          } else {
-            console.log('Board loaded successfully');
-            // If we got here, the board loaded successfully
-          }
-        } catch (error) {
-          if (!isMounted) return;
-          console.error('Error loading board:', error);
-          toast.error('Failed to load whiteboard');
-          
-          if (retryCount >= maxRetries) {
-            navigate('/dashboard');
-          } else {
-            timeoutId = setTimeout(() => {
-              setLoadAttempted(false); // Allow another attempt
-            }, 1000);
-          }
-        }
-      };
-      
-      loadBoard();
-    }
-    
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
-  }, [id, getBoard, navigate, user?.id, loadAttempted]);
-
-  // Initialize socket when component mounts and user/board is available
-  useEffect(() => {
-    if (user && id && currentBoard) {
-      initializeSocket();
-    }
-    
-    return () => {
-      // Clean up socket connection when component unmounts
-      if (socketRef.current) {
-        console.log('Closing socket connection');
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-    };
-  }, [id, user, currentBoard]);
-
-  // Handle window resize
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight
-  });
-  
-  // Stage dimensions
-  const stageWidth = windowSize.width - (isSidebarOpen ? 256 : 0);
-  const stageHeight = windowSize.height - 64;
-
-  useEffect(() => {
-    console.log('WhiteboardPage mounted');
-    console.log('Initial state:', { lines, shapes, tool, zoom, stagePos });
-    
-    return () => {
-      console.log('WhiteboardPage unmounted');
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  // Function to check if the user has access to the board
-  const checkBoardAccess = async (boardId) => {
-    console.log('Checking board access directly');
-    
-    // Use the boardStore method for consistency
-    const accessResult = await useBoardStore.getState().checkBoardAccess(boardId);
-    
-    console.log('Direct board access check result:', accessResult);
-    
-    return accessResult.success && accessResult.accessible;
-  };
-
-  // Update Transformer to attach to all selected nodes
-  useEffect(() => {
-    if (selectedIds.length && transformerRef.current && stageRef.current) {
-      const stage = stageRef.current;
-      const nodes = selectedIds.map(id => stage.findOne(`#${id}`)).filter(Boolean);
-      transformerRef.current.nodes(nodes);
-      transformerRef.current.getLayer().batchDraw();
-    } else if (transformerRef.current) {
-      transformerRef.current.nodes([]);
-      transformerRef.current.getLayer().batchDraw();
-    }
-  }, [selectedIds]);
-
   const handleMouseDown = (e) => {
     console.log('handleMouseDown called with tool:', tool);
     
@@ -946,39 +1211,6 @@ const WhiteboardPage = () => {
     saveToHistory();
   };
 
-  // Handle delete selected elements
-  const handleDeleteSelected = () => {
-    if (!selectedIds.length) return;
-    
-    // Remove selected elements from state
-    setShapes(prev => prev.filter(shape => !selectedIds.includes(shape.id)));
-    setLines(prev => prev.filter(line => !selectedIds.includes(line.id)));
-    
-    // Emit delete events to socket for each deleted element
-    if (socketRef.current && socketRef.current.connected) {
-      try {
-        selectedIds.forEach(elementId => {
-          socketRef.current.emit('drawing-update', {
-            elements: [],
-            action: 'delete',
-            elementId: elementId
-          });
-        });
-      } catch (error) {
-        console.warn('Socket emit failed:', error);
-      }
-    }
-    
-    // Clear selection
-    setSelectedIds([]);
-    
-    // Save to history for undo/redo
-    saveToHistory();
-    
-    // Show feedback
-    toast.success(`Deleted ${selectedIds.length} element${selectedIds.length > 1 ? 's' : ''}`);
-  };
-
   const handleMouseUp = (e) => {
     // Handle connector end
     if (connectorMode && connectorStart) {
@@ -1065,26 +1297,6 @@ const WhiteboardPage = () => {
     saveToHistory();
   };
   
-  // Save current state to history
-  const saveToHistory = () => {
-    // Only save if something changed
-    if (historyStep < history.length - 1) {
-      // Discard future states
-      const newHistory = history.slice(0, historyStep + 1);
-      setHistory([
-        ...newHistory,
-        { lines: [...lines], shapes: [...shapes] }
-      ]);
-      setHistoryStep(historyStep + 1);
-    } else {
-      setHistory([
-        ...history,
-        { lines: [...lines], shapes: [...shapes] }
-      ]);
-      setHistoryStep(historyStep + 1);
-    }
-  };
-
   const handleWheel = (e) => {
     e.evt.preventDefault();
     
@@ -1219,171 +1431,6 @@ const WhiteboardPage = () => {
     '#fef3c7', '#fecaca', '#d1fae5', '#dbeafe', '#f3e8ff', '#fed7aa'
   ];
 
-  // Update keyboard support for multi-select and clipboard operations
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Don't handle keyboard events if text editing is active
-      if (isTextEditing) return;
-      
-      // Global shortcuts (work even without selection)
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key.toLowerCase()) {
-          case 'a':
-            e.preventDefault();
-            handleSelectAll();
-            return;
-          case 'c':
-            e.preventDefault();
-            if (selectedIds.length) handleCopy();
-            return;
-          case 'v':
-            e.preventDefault();
-            handlePaste();
-            return;
-          case 'x':
-            e.preventDefault();
-            if (selectedIds.length) handleCut();
-            return;
-          case 'd':
-            e.preventDefault();
-            if (selectedIds.length) handleDuplicate();
-            return;
-        }
-      }
-      
-      if (!selectedIds.length) return;
-      let updated = false;
-      if (["Delete", "Backspace"].includes(e.key)) {
-        // Remove selected elements from state
-        setShapes(prev => prev.filter(shape => !selectedIds.includes(shape.id)));
-        setLines(prev => prev.filter(line => !selectedIds.includes(line.id)));
-        
-        // Emit delete events to socket for each deleted element
-        if (socketRef.current && socketRef.current.connected) {
-          try {
-            selectedIds.forEach(elementId => {
-              socketRef.current.emit('drawing-update', {
-                elements: [],
-                action: 'delete',
-                elementId: elementId
-              });
-            });
-          } catch (error) {
-            console.warn('Socket emit failed:', error);
-          }
-        }
-        
-        setSelectedIds([]);
-        saveToHistory();
-        updated = true;
-      } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        setShapes(prev => prev.map(shape => {
-          if (!selectedIds.includes(shape.id)) return shape;
-          const step = e.shiftKey ? 10 : 1;
-          switch (e.key) {
-            case 'ArrowUp': return { ...shape, y: (shape.y || 0) - step };
-            case 'ArrowDown': return { ...shape, y: (shape.y || 0) + step };
-            case 'ArrowLeft': return { ...shape, x: (shape.x || 0) - step };
-            case 'ArrowRight': return { ...shape, x: (shape.x || 0) + step };
-            default: return shape;
-          }
-        }));
-        setLines(prev => prev.map(line => {
-          if (!selectedIds.includes(line.id)) return line;
-          const step = e.shiftKey ? 10 : 1;
-          if (line.points) {
-            let newPoints = [...line.points];
-            switch (e.key) {
-              case 'ArrowUp': newPoints = newPoints.map((p, i) => i % 2 === 1 ? p - step : p); break;
-              case 'ArrowDown': newPoints = newPoints.map((p, i) => i % 2 === 1 ? p + step : p); break;
-              case 'ArrowLeft': newPoints = newPoints.map((p, i) => i % 2 === 0 ? p - step : p); break;
-              case 'ArrowRight': newPoints = newPoints.map((p, i) => i % 2 === 0 ? p + step : p); break;
-              default: break;
-            }
-            return { ...line, points: newPoints };
-          }
-          return line;
-        }));
-        updated = true;
-      }
-      if (updated) {
-        // Optionally, emit update to socket here
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIds]);
-
-  // Add drag-to-select (selection box)
-  const handleStageMouseDown = (e) => {
-    // Handle selection box for select tool
-    if (tool === 'select' && e.target === e.target.getStage()) {
-      setSelectionBox({ x1: e.evt.layerX, y1: e.evt.layerY, x2: e.evt.layerX, y2: e.evt.layerY });
-      setSelectedIds([]);
-    }
-    
-    // Call the main drawing handler for all tools
-    handleMouseDown(e);
-  };
-  
-  const handleStageMouseMove = (e) => {
-    // Handle selection box for select tool
-    if (tool === 'select' && selectionBox) {
-      setSelectionBox(box => ({ ...box, x2: e.evt.layerX, y2: e.evt.layerY }));
-    }
-    
-    // Call the main drawing handler for all tools
-    handleMouseMove(e);
-  };
-  
-  const handleStageMouseUp = (e) => {
-    // Handle selection box for select tool
-    if (tool === 'select' && selectionBox) {
-      // Calculate selection area
-      const { x1, y1, x2, y2 } = selectionBox;
-      const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
-      const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
-      // Find all shapes/lines in area
-      const selected = [
-        ...shapes.filter(shape => shape.x >= minX && shape.x <= maxX && shape.y >= minY && shape.y <= maxY).map(s => s.id),
-        ...lines.filter(line => {
-          // Check if any point is in area
-          return line.points && line.points.some((p, i) => {
-            if (i % 2 === 0) return p >= minX && p <= maxX; // x
-            else return p >= minY && p <= maxY; // y
-          });
-        }).map(l => l.id)
-      ];
-      setSelectedIds(selected);
-      setSelectionBox(null);
-    }
-    
-    // Call the main drawing handler for all tools
-    handleMouseUp(e);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!currentBoard) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Board not found</h2>
-          <p className="text-gray-600 mb-4">The whiteboard you're looking for doesn't exist.</p>
-          <Button onClick={() => navigate('/dashboard')}>
-            Back to Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   // Handle chat message send
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -1501,6 +1548,31 @@ const WhiteboardPage = () => {
     setStrokeColor(scheme.primary);
     setFillColor(scheme.secondary);
     // You could also update the board background here
+  };
+
+  const handleApplyTemplate = (template) => {
+    // Clear current board
+    setLines([]);
+    setShapes([]);
+    setSelectedIds([]);
+    setHistory([{ lines: [], shapes: [] }]);
+    setHistoryStep(0);
+    
+    // Apply template elements
+    if (template.elements && template.elements.length > 0) {
+      const templateLines = template.elements.filter(el => el.type === 'pen');
+      const templateShapes = template.elements.filter(el => el.type !== 'pen');
+      
+      setLines(templateLines);
+      setShapes(templateShapes);
+      
+      // Save to history
+      const newHistory = [...history.slice(0, historyStep + 1), { lines: templateLines, shapes: templateShapes }];
+      setHistory(newHistory);
+      setHistoryStep(newHistory.length - 1);
+      
+      toast.success(`Applied ${template.name} template`);
+    }
   };
 
   // Handle image upload
@@ -1792,135 +1864,13 @@ const WhiteboardPage = () => {
     saveToHistory();
   };
 
-  // Select all elements
-  const handleSelectAll = () => {
-    const allIds = [
-      ...shapes.map(shape => shape.id),
-      ...lines.map(line => line.id)
-    ];
-    setSelectedIds(allIds);
-    toast.success(`Selected ${allIds.length} elements`);
-  };
+ 
 
   // Deselect all elements
   const handleDeselectAll = () => {
     setSelectedIds([]);
   };
-
-  // Copy selected elements
-  const handleCopy = () => {
-    if (!selectedIds.length) {
-      toast.error('No elements selected to copy');
-      return;
-    }
-    
-    const selectedShapes = shapes.filter(shape => selectedIds.includes(shape.id));
-    const selectedLines = lines.filter(line => selectedIds.includes(line.id));
-    
-    setClipboard({
-      shapes: selectedShapes,
-      lines: selectedLines
-    });
-    
-    // Calculate center of selection for offset
-    const allElements = [...selectedShapes, ...selectedLines];
-    if (allElements.length > 0) {
-      const centerX = allElements.reduce((sum, el) => sum + (el.x || 0), 0) / allElements.length;
-      const centerY = allElements.reduce((sum, el) => sum + (el.y || 0), 0) / allElements.length;
-      setClipboardOffset({ x: centerX, y: centerY });
-    }
-    
-    toast.success(`Copied ${selectedIds.length} element${selectedIds.length > 1 ? 's' : ''}`);
-  };
-
-  // Cut selected elements
-  const handleCut = () => {
-    if (!selectedIds.length) {
-      toast.error('No elements selected to cut');
-      return;
-    }
-    
-    handleCopy(); // Copy first
-    
-    // Then delete
-    handleDeleteSelected();
-    
-    toast.success(`Cut ${selectedIds.length} element${selectedIds.length > 1 ? 's' : ''}`);
-  };
-
-  // Paste elements
-  const handlePaste = () => {
-    if (!clipboard) {
-      toast.error('Nothing to paste');
-      return;
-    }
-    
-    const offset = 20; // Offset for pasted elements
-    const newElements = [];
-    
-    // Paste shapes with offset
-    clipboard.shapes.forEach(shape => {
-      const newShape = {
-        ...shape,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        x: shape.x + offset,
-        y: shape.y + offset
-      };
-      newElements.push(newShape);
-    });
-    
-    // Paste lines with offset
-    clipboard.lines.forEach(line => {
-      const newLine = {
-        ...line,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        points: line.points ? line.points.map((point, index) => 
-          index % 2 === 0 ? point + offset : point + offset
-        ) : line.points
-      };
-      newElements.push(newLine);
-    });
-    
-    // Add to state
-    const newShapes = newElements.filter(el => el.type !== 'pen');
-    const newLines = newElements.filter(el => el.type === 'pen');
-    
-    setShapes(prev => [...prev, ...newShapes]);
-    setLines(prev => [...prev, ...newLines]);
-    
-    // Select newly pasted elements
-    const newIds = newElements.map(el => el.id);
-    setSelectedIds(newIds);
-    
-    // Emit to socket
-    if (socketRef.current && socketRef.current.connected) {
-      try {
-        socketRef.current.emit('drawing-update', {
-          elements: newElements,
-          action: 'paste',
-          elementIds: newIds
-        });
-      } catch (error) {
-        console.warn('Socket emit failed:', error);
-      }
-    }
-    
-    saveToHistory();
-    toast.success(`Pasted ${newElements.length} element${newElements.length > 1 ? 's' : ''}`);
-  };
-
-  // Duplicate selected elements
-  const handleDuplicate = () => {
-    if (!selectedIds.length) {
-      toast.error('No elements selected to duplicate');
-      return;
-    }
-    
-    handleCopy();
-    handlePaste();
-  };
-
-  // Layer management functions
+// Layer management functions
   const handleBringForward = () => {
     if (!selectedIds.length) {
       toast.error('No elements selected');
@@ -2191,6 +2141,89 @@ const WhiteboardPage = () => {
     return lockedElements.has(elementId);
   };
 
+  // Add handleImportFile stub
+  const handleImportFile = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      if (file.type.startsWith('image/')) {
+        // Image import
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const id = Date.now().toString();
+          setShapes(prev => [
+            ...prev,
+            {
+              type: 'image',
+              x: 100,
+              y: 100,
+              width: 400,
+              height: 300,
+              src: e.target.result,
+              id
+            }
+          ]);
+          toast.success('Image imported!');
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type === 'application/pdf') {
+        // PDF import (first page)
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const dataUrl = canvas.toDataURL('image/png');
+        const id = Date.now().toString();
+        setShapes(prev => [
+          ...prev,
+          {
+            type: 'image',
+            x: 100,
+            y: 100,
+            width: 400,
+            height: 300,
+            src: dataUrl,
+            id
+          }
+        ]);
+        toast.success('PDF imported as image!');
+      } else {
+        toast.error('Unsupported file type. Please select an image or PDF.');
+      }
+    } catch (err) {
+      toast.error('Failed to import file.');
+    }
+    setIsImportModalOpen(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!currentBoard) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Board not found</h2>
+          <p className="text-gray-600 mb-4">The whiteboard you're looking for doesn't exist.</p>
+          <Button onClick={() => navigate('/dashboard')}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
       {/* Header */}
@@ -2250,6 +2283,33 @@ const WhiteboardPage = () => {
           >
             <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
             Chat
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsVoiceChatOpen(!isVoiceChatOpen)}
+          >
+            <MicrophoneIcon className="w-4 h-4 mr-2" />
+            Voice
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsCommentsOpen(!isCommentsOpen)}
+          >
+            <ChatBubbleLeftIcon className="w-4 h-4 mr-2" />
+            Comments
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsTemplatesOpen(true)}
+          >
+            <DocumentTextIcon className="w-4 h-4 mr-2" />
+            Templates
           </Button>
           
           <Button 
@@ -2330,11 +2390,11 @@ const WhiteboardPage = () => {
         {/* Sidebar */}
         <div className={`bg-white border-r border-gray-200 p-4 space-y-6 ${
           isSidebarOpen ? 'block' : 'hidden'
-        } md:block w-64 flex-shrink-0`}>
+        }  md:block w-auto min-w-fit flex-shrink-0`}>
           {/* Tools */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Tools</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
               {[
                 { id: 'select', icon: CursorArrowRaysIcon, label: 'Select' },
                 { id: 'pen', icon: PencilIcon, label: 'Pen' },
@@ -2356,7 +2416,7 @@ const WhiteboardPage = () => {
                   <button
                     key={toolItem.id}
                     onClick={() => setTool(toolItem.id)}
-                    className={`p-3 rounded-lg border-2 transition-colors ${
+                    className={`w-full aspect-square min-w-0 flex flex-col items-center justify-center rounded-lg border-2 transition-colors ${
                       tool === toolItem.id
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
                         : 'border-gray-200 hover:border-gray-300'
@@ -2415,7 +2475,7 @@ const WhiteboardPage = () => {
             
             <div className="grid grid-cols-5 gap-2 mt-3">
               {['#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
-                '#ff00ff', '#00ffff', '#ff6b00', '#9c27b0', '#795548'].map((color) => (
+                '#ff00ff', '#00ffff', '#orange', '#purple', '#brown'].map((color) => (
                 <button
                   key={color}
                   onClick={() => setStrokeColor(color)}
@@ -2970,9 +3030,9 @@ const WhiteboardPage = () => {
           <Stage
             width={windowSize.width - (isSidebarOpen ? 256 : 0)}
             height={windowSize.height - 64}
-            onMouseDown={handleStageMouseDown}
-            onMouseMove={handleStageMouseMove}
-            onMouseUp={handleStageMouseUp}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
             onWheel={handleWheel}
             scaleX={zoom}
             scaleY={zoom}
@@ -3574,6 +3634,34 @@ const WhiteboardPage = () => {
         elements={[...lines, ...shapes]}
       />
       
+      {/* Voice Chat */}
+      <VoiceChat
+        socket={socketRef.current}
+        boardId={id}
+        user={user}
+        activeUsers={activeUsers}
+        isVoiceChatOpen={isVoiceChatOpen}
+        setIsVoiceChatOpen={setIsVoiceChatOpen}
+      />
+      
+      {/* Comments */}
+      <Comments
+        socket={socketRef.current}
+        boardId={id}
+        user={user}
+        isCommentsOpen={isCommentsOpen}
+        setIsCommentsOpen={setIsCommentsOpen}
+        selectedElementId={selectedElementId}
+        setSelectedElementId={setSelectedElementId}
+      />
+      
+      {/* Board Templates */}
+      <BoardTemplates
+        isOpen={isTemplatesOpen}
+        onClose={() => setIsTemplatesOpen(false)}
+        onApplyTemplate={handleApplyTemplate}
+      />
+      
       {/* Share Modal */}
       <ShareModal
         isOpen={isShareModalOpen}
@@ -3582,6 +3670,18 @@ const WhiteboardPage = () => {
         boardTitle={currentBoard?.title}
         currentCollaborators={currentBoard?.collaborators || []}
       />
+
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+            <h2 className="text-lg font-bold mb-4">Import File</h2>
+            <input type="file" accept="image/*,application/pdf" onChange={handleImportFile} />
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setIsImportModalOpen(false)}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

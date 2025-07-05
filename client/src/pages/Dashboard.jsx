@@ -35,9 +35,10 @@ const Dashboard = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ open: false, boardId: null, boardTitle: '' });
+  const [analyticsModal, setAnalyticsModal] = useState({ open: false, analytics: null, boardTitle: '' });
 
   const { user } = useAuthStore();
-  const { boards, loading, fetchBoards, createBoard, deleteBoard } = useBoardStore();
+  const { boards, loading, fetchBoards, createBoard, deleteBoard, archiveBoard, restoreBoard, getBoardAnalytics } = useBoardStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -144,6 +145,24 @@ const Dashboard = () => {
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
     return formatDate(dateString);
+  };
+
+  const handleArchiveBoard = async (boardId) => {
+    const result = await archiveBoard(boardId);
+    if (result.success) toast.success('Board archived');
+    else toast.error(result.error);
+  };
+
+  const handleRestoreBoard = async (boardId) => {
+    const result = await restoreBoard(boardId);
+    if (result.success) toast.success('Board restored');
+    else toast.error(result.error);
+  };
+
+  const handleShowAnalytics = async (boardId, boardTitle) => {
+    const result = await getBoardAnalytics(boardId);
+    if (result.success) setAnalyticsModal({ open: true, analytics: result.analytics, boardTitle });
+    else toast.error(result.error);
   };
 
   if (loading && boards.length === 0) {
@@ -330,9 +349,33 @@ const Dashboard = () => {
                       >
                         <DocumentDuplicateIcon className="w-4 h-4" />
                       </button>
+                      <button
+                        title="Analytics"
+                        onClick={() => handleShowAnalytics(board._id, board.title)}
+                        className="p-2 rounded-lg hover:bg-yellow-50 text-gray-500 hover:text-yellow-600 transition-all duration-200"
+                      >
+                        <ChartBarIcon className="w-4 h-4" />
+                      </button>
                     </div>
                     
                     <div className="flex space-x-1">
+                      {board.archived ? (
+                        <button
+                          title="Restore"
+                          onClick={() => handleRestoreBoard(board._id)}
+                          className="p-2 rounded-lg hover:bg-green-50 text-gray-500 hover:text-green-600 transition-all duration-200"
+                        >
+                          <ArrowRightIcon className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          title="Archive"
+                          onClick={() => handleArchiveBoard(board._id)}
+                          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-all duration-200"
+                        >
+                          <FolderIcon className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         title="Rename"
                         className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-all duration-200"
@@ -462,6 +505,37 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Analytics Modal */}
+        {analyticsModal.open && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-purple-600 bg-clip-text text-transparent">
+                  Analytics for {analyticsModal.boardTitle}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {analyticsModal.analytics ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-between"><span className="font-semibold">Views:</span> <span>{analyticsModal.analytics.views}</span></div>
+                    <div className="flex justify-between"><span className="font-semibold">Forks:</span> <span>{analyticsModal.analytics.forks}</span></div>
+                    <div className="flex justify-between"><span className="font-semibold">Collaborators:</span> <span>{analyticsModal.analytics.collaboratorCount}</span></div>
+                    <div className="flex justify-between"><span className="font-semibold">Last Activity:</span> <span>{analyticsModal.analytics.lastActivity ? new Date(analyticsModal.analytics.lastActivity).toLocaleString() : '-'}</span></div>
+                    <div className="flex justify-between"><span className="font-semibold">Created At:</span> <span>{analyticsModal.analytics.createdAt ? new Date(analyticsModal.analytics.createdAt).toLocaleString() : '-'}</span></div>
+                    <div className="flex justify-between"><span className="font-semibold">Updated At:</span> <span>{analyticsModal.analytics.updatedAt ? new Date(analyticsModal.analytics.updatedAt).toLocaleString() : '-'}</span></div>
+                    <div className="flex flex-col"><span className="font-semibold mb-1">Active Users:</span> <span>{analyticsModal.analytics.activeUsers?.length || 0}</span></div>
+                  </div>
+                ) : (
+                  <div>Loading analytics...</div>
+                )}
+                <div className="mt-6 text-center">
+                  <Button onClick={() => setAnalyticsModal({ open: false, analytics: null, boardTitle: '' })} className="bg-gradient-to-r from-yellow-600 to-purple-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">Close</Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

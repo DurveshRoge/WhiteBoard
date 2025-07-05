@@ -318,6 +318,216 @@ export const setupSocketHandlers = (io) => {
       }
     });
 
+    // Handle voice chat events
+    socket.on('join-voice-chat', (data) => {
+      try {
+        const { boardId } = data;
+        if (!boardId) return;
+
+        const roomName = `voice:${boardId}`;
+        socket.join(roomName);
+        socket.currentVoiceRoom = roomName;
+
+        // Get existing peers in the voice chat
+        const voiceRoom = io.sockets.adapter.rooms.get(roomName);
+        const peers = [];
+        
+        if (voiceRoom) {
+          voiceRoom.forEach(socketId => {
+            if (socketId !== socket.id) {
+              const peerSocket = io.sockets.sockets.get(socketId);
+              if (peerSocket && peerSocket.userId !== socket.userId) {
+                peers.push({
+                  userId: peerSocket.userId,
+                  signal: null // Will be sent by the peer
+                });
+              }
+            }
+          });
+        }
+
+        // Notify the joining user about existing peers
+        socket.emit('voice-chat-joined', { peers });
+
+        // Notify other users about the new participant
+        socket.to(roomName).emit('user-joined-voice', {
+          userId: socket.userId,
+          userName: socket.user.name
+        });
+
+        console.log(`🎤 User ${socket.user.name} joined voice chat in board ${boardId}`);
+      } catch (error) {
+        console.error('Error joining voice chat:', error);
+        socket.emit('error', { message: 'Failed to join voice chat' });
+      }
+    });
+
+    socket.on('leave-voice-chat', (data) => {
+      const { boardId } = data;
+      if (boardId && socket.currentVoiceRoom) {
+        const roomName = `voice:${boardId}`;
+        socket.leave(roomName);
+        socket.currentVoiceRoom = null;
+
+        // Notify other users
+        socket.to(roomName).emit('user-left-voice', {
+          userId: socket.userId,
+          userName: socket.user.name
+        });
+
+        console.log(`🎤 User ${socket.user.name} left voice chat in board ${boardId}`);
+      }
+    });
+
+    socket.on('voice-signal', (data) => {
+      const { boardId, userId, signal } = data;
+      if (boardId && userId) {
+        const roomName = `voice:${boardId}`;
+        socket.to(roomName).emit('voice-signal', {
+          userId: socket.userId,
+          signal
+        });
+      }
+    });
+
+    socket.on('voice-ice-candidate', (data) => {
+      const { boardId, userId, candidate } = data;
+      if (boardId && userId) {
+        const roomName = `voice:${boardId}`;
+        socket.to(roomName).emit('voice-ice-candidate', {
+          userId: socket.userId,
+          candidate
+        });
+      }
+    });
+
+    // Handle comments
+    socket.on('get-comments', async (data) => {
+      try {
+        const { boardId } = data;
+        if (!boardId) return;
+
+        const board = await Board.findById(boardId);
+        if (!board) return;
+
+        // For now, we'll store comments in memory
+        // In a real app, you'd want to store them in the database
+        const comments = board.comments || [];
+        
+        socket.emit('comments-loaded', { comments });
+      } catch (error) {
+        console.error('Error loading comments:', error);
+        socket.emit('error', { message: 'Failed to load comments' });
+      }
+    });
+
+    socket.on('add-comment', async (data) => {
+      try {
+        const { boardId, comment } = data;
+        if (!boardId || !comment) return;
+
+        const board = await Board.findById(boardId);
+        if (!board) return;
+
+        // Add comment to board
+        if (!board.comments) board.comments = [];
+        board.comments.push(comment);
+        await board.save();
+
+        // Broadcast to all users in the board
+        const roomName = `board:${boardId}`;
+        io.to(roomName).emit('comment-added', { comment });
+
+        console.log(`💬 Comment added to board ${boardId} by ${socket.user.name}`);
+      } catch (error) {
+        console.error('Error adding comment:', error);
+        socket.emit('error', { message: 'Failed to add comment' });
+      }
+    });
+
+    socket.on('update-comment', async (data) => {
+      try {
+        const { boardId, commentId, text } = data;
+        if (!boardId || !commentId || !text) return;
+
+        const board = await Board.findById(boardId);
+        if (!board || !board.comments) return;
+
+        const comment = board.comments.find(c => c.id === commentId);
+        if (!comment || comment.userId !== socket.userId) {
+          socket.emit('error', { message: 'Cannot edit this comment' });
+          return;
+        }
+
+        comment.text = text;
+        comment.lastEdited = new Date();
+        await board.save();
+
+        // Broadcast update
+        const roomName = `board:${boardId}`;
+        io.to(roomName).emit('comment-updated', { comment });
+
+        console.log(`💬 Comment updated in board ${boardId} by ${socket.user.name}`);
+      } catch (error) {
+        console.error('Error updating comment:', error);
+        socket.emit('error', { message: 'Failed to update comment' });
+      }
+    });
+
+    socket.on('delete-comment', async (data) => {
+      try {
+        const { boardId, commentId } = data;
+        if (!boardId || !commentId) return;
+
+        const board = await Board.findById(boardId);
+        if (!board || !board.comments) return;
+
+        const comment = board.comments.find(c => c.id === commentId);
+        if (!comment || comment.userId !== socket.userId) {
+          socket.emit('error', { message: 'Cannot delete this comment' });
+          return;
+        }
+
+        board.comments = board.comments.filter(c => c.id !== commentId);
+        await board.save();
+
+        // Broadcast deletion
+        const roomName = `board:${boardId}`;
+        io.to(roomName).emit('comment-deleted', { commentId });
+
+        console.log(`💬 Comment deleted from board ${boardId} by ${socket.user.name}`);
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+        socket.emit('error', { message: 'Failed to delete comment' });
+      }
+    });
+
+    socket.on('add-comment-reply', async (data) => {
+      try {
+        const { boardId, parentId, reply } = data;
+        if (!boardId || !parentId || !reply) return;
+
+        const board = await Board.findById(boardId);
+        if (!board || !board.comments) return;
+
+        const parentComment = board.comments.find(c => c.id === parentId);
+        if (!parentComment) return;
+
+        if (!parentComment.replies) parentComment.replies = [];
+        parentComment.replies.push(reply);
+        await board.save();
+
+        // Broadcast reply
+        const roomName = `board:${boardId}`;
+        io.to(roomName).emit('comment-reply-added', { parentId, reply });
+
+        console.log(`💬 Reply added to comment in board ${boardId} by ${socket.user.name}`);
+      } catch (error) {
+        console.error('Error adding comment reply:', error);
+        socket.emit('error', { message: 'Failed to add reply' });
+      }
+    });
+
     // Handle errors
     socket.on('error', (error) => {
       console.error('Socket error:', error);

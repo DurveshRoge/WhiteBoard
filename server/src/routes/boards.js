@@ -14,7 +14,10 @@ import {
   restoreVersion,
   exportBoard,
   getPublicBoards,
-  getTemplates
+  getTemplates,
+  archiveBoard,
+  restoreBoard,
+  getBoardAnalytics
 } from '../controllers/boardController.js';
 import { protect, optionalAuth } from '../middleware/auth.js';
 
@@ -105,5 +108,20 @@ router.get('/:id/export', [
   param('id').isMongoId().withMessage('Invalid board ID'),
   query('format').isIn(['png', 'pdf', 'json']).withMessage('Invalid export format')
 ], exportBoard);
+
+// Archive a board
+router.post('/:id/archive', [
+  param('id').isMongoId().withMessage('Invalid board ID')
+], archiveBoard);
+
+// Restore a board
+router.post('/:id/restore', [
+  param('id').isMongoId().withMessage('Invalid board ID')
+], restoreBoard);
+
+// Get board analytics
+router.get('/:id/analytics', [
+  param('id').isMongoId().withMessage('Invalid board ID')
+], getBoardAnalytics);
 
 export default router;

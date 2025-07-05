@@ -571,3 +571,82 @@ export const getPublicBoards = async (req, res, next) => {
 export const getTemplates = async (req, res, next) => {
   // Implementation for getting templates
 };
+
+// @desc    Archive a board
+// @route   POST /api/boards/:id/archive
+// @access  Private (owner or admin)
+export const archiveBoard = async (req, res, next) => {
+  try {
+    const board = await Board.findById(req.params.id);
+    if (!board) {
+      return res.status(404).json({ success: false, message: 'Board not found' });
+    }
+    // Only owner or admin can archive
+    if (board.owner.toString() !== req.user.id && !board.hasAccess(req.user.id, 'admin')) {
+      return res.status(403).json({ success: false, message: 'Not authorized to archive this board' });
+    }
+    if (board.archived) {
+      return res.status(400).json({ success: false, message: 'Board is already archived' });
+    }
+    board.archived = true;
+    await board.save();
+    res.status(200).json({ success: true, message: 'Board archived successfully', data: board });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Restore an archived board
+// @route   POST /api/boards/:id/restore
+// @access  Private (owner or admin)
+export const restoreBoard = async (req, res, next) => {
+  try {
+    const board = await Board.findById(req.params.id);
+    if (!board) {
+      return res.status(404).json({ success: false, message: 'Board not found' });
+    }
+    // Only owner or admin can restore
+    if (board.owner.toString() !== req.user.id && !board.hasAccess(req.user.id, 'admin')) {
+      return res.status(403).json({ success: false, message: 'Not authorized to restore this board' });
+    }
+    if (!board.archived) {
+      return res.status(400).json({ success: false, message: 'Board is not archived' });
+    }
+    board.archived = false;
+    await board.save();
+    res.status(200).json({ success: true, message: 'Board restored successfully', data: board });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get board analytics
+// @route   GET /api/boards/:id/analytics
+// @access  Private (owner, admin, or editor)
+export const getBoardAnalytics = async (req, res, next) => {
+  try {
+    const board = await Board.findById(req.params.id);
+    if (!board) {
+      return res.status(404).json({ success: false, message: 'Board not found' });
+    }
+    // Only collaborators or owner can view analytics
+    if (!board.hasAccess(req.user.id, 'editor')) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view analytics' });
+    }
+    // Return stats and activity
+    res.status(200).json({
+      success: true,
+      analytics: {
+        views: board.stats.views,
+        forks: board.stats.forks,
+        collaboratorCount: board.stats.collaboratorCount,
+        lastActivity: board.lastActivity,
+        activeUsers: board.activeUsers,
+        createdAt: board.createdAt,
+        updatedAt: board.updatedAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
