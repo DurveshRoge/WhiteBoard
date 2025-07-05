@@ -1,3 +1,7 @@
+// Load environment variables FIRST before any other imports
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -6,7 +10,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 
 import connectDB from './config/database.js';
@@ -14,17 +17,26 @@ import authRoutes from './routes/auth.js';
 import boardRoutes from './routes/boards.js';
 import userRoutes from './routes/users.js';
 import aiRoutes from './routes/ai.js';
+import oauthRoutes from './routes/oauth.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { initializeAIServices } from './services/aiService.js';
+import { initializePassport } from './config/passport.js';
+import passport from 'passport';
+import session from 'express-session';
 
-// Load environment variables
-dotenv.config();
+// Initialize AI services after environment variables are loaded
+initializeAIServices();
+
+// Initialize Passport after environment variables are loaded
+initializePassport();
 
 const app = express();
 const server = createServer(app);
 
 // Initialize Socket.IO
 const io = new Server(server, {
+  path: '/socket.io',
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -70,6 +82,22 @@ app.use(helmet({
 app.use(compression());
 app.use(morgan('combined'));
 app.use(limiter);
+
+// Session configuration (must be before passport)
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS in production
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:3000",
   credentials: true,
@@ -84,6 +112,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', oauthRoutes); // OAuth routes (no rate limiting for redirects)
 app.use('/api/boards', boardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);

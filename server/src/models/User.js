@@ -21,7 +21,10 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function() {
+      // Password is required only if user doesn't have OAuth providers
+      return !this.googleId && !this.facebookId;
+    },
     minlength: [6, 'Password must be at least 6 characters'],
     select: false
   },
@@ -37,6 +40,24 @@ const userSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  // OAuth provider IDs
+  googleId: {
+    type: String,
+    default: null
+  },
+  facebookId: {
+    type: String,
+    default: null
+  },
+  provider: {
+    type: String,
+    enum: ['local', 'google', 'facebook'],
+    default: 'local'
   },
   verificationToken: String,
   resetPasswordToken: String,

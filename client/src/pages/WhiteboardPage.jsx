@@ -49,6 +49,7 @@ import {
 } from '@heroicons/react/24/outline';
 import * as pdfjsLib from "pdfjs-dist";
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import { io } from 'socket.io-client';
 
 const WhiteboardPage = () => {
   // All hooks must be declared here, before any return statement
@@ -643,7 +644,12 @@ const WhiteboardPage = () => {
     if (!user || !id) return;
     
     try {
-      const io = (await import('socket.io-client')).io;
+      const socket = io('/', {
+        path: '/socket.io',
+        auth: {
+          token: useAuthStore.getState().token
+        }
+      });
       
       // Close any existing connection
       if (socketRef.current) {
@@ -653,14 +659,6 @@ const WhiteboardPage = () => {
       
       console.log('Initializing socket connection');
       
-      // Create new connection
-      const socket = io('/', {
-        path: '/socket.io',
-        auth: {
-          token: useAuthStore.getState().token
-        }
-      });
-      
       socket.on('connect', () => {
         console.log('Socket connected:', socket.id);
         toast.success('Connected to collaborative session');
@@ -668,10 +666,51 @@ const WhiteboardPage = () => {
         // Join the board room
         socket.emit('join-board', { boardId: id });
       });
+
+      socket.on('disconnect', (reason) => {
+        console.warn('Socket disconnected:', reason);
+        toast.error('Disconnected from collaborative session');
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+        toast.error('Socket connection error: ' + (error.message || error));
+      });
+
+      // Add logging for comment and chat events
+      socket.on('comments-loaded', (data) => {
+        console.log('Received comments-loaded:', data);
+      });
+      socket.on('comment-added', (data) => {
+        console.log('Received comment-added:', data);
+      });
+      socket.on('comment-updated', (data) => {
+        console.log('Received comment-updated:', data);
+      });
+      socket.on('comment-deleted', (data) => {
+        console.log('Received comment-deleted:', data);
+      });
+      socket.on('comment-reply-added', (data) => {
+        console.log('Received comment-reply-added:', data);
+      });
+      socket.on('chat-message', (data) => {
+        console.log('Received chat-message:', data);
+      });
       
       socket.on('error', (error) => {
         console.error('Socket error:', error);
-        toast.error(`Socket error: ${error.message || 'Unknown error'}`);
+        let errorMsg = 'Socket error: ';
+        if (typeof error === 'string') {
+          errorMsg += error;
+        } else if (error && error.message) {
+          errorMsg += error.message;
+          if (error.details) {
+            errorMsg += ` (${JSON.stringify(error.details)})`;
+          }
+        } else {
+          errorMsg += JSON.stringify(error);
+        }
+        toast.error(errorMsg);
       });
       
       socket.on('board-joined', (data) => {

@@ -13,6 +13,19 @@ export const useBoardStore = create((set, get) => ({
 
   // Fetch all boards for the current user
   fetchBoards: async () => {
+    // Debounce mechanism to prevent rapid successive calls
+    const now = Date.now();
+    const requestKey = 'fetchBoards';
+    const lastRequest = get().recentRequests.get(requestKey);
+    
+    if (lastRequest && now - lastRequest < get().REQUEST_TIMEOUT) {
+      console.log('Throttling repeated fetchBoards request');
+      return { success: false, error: 'Request throttled to prevent infinite loop' };
+    }
+    
+    // Record this request time
+    get().recentRequests.set(requestKey, now);
+    
     try {
       set({ loading: true, error: null });
       

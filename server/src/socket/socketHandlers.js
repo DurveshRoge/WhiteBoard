@@ -431,12 +431,18 @@ export const setupSocketHandlers = (io) => {
 
         // Add comment to board
         if (!board.comments) board.comments = [];
-        board.comments.push(comment);
+        const serverComment = {
+          ...comment,
+          userId: socket.userId,
+          userName: socket.user.name,
+          userAvatar: socket.user.avatarUrl,
+        };
+        board.comments.push(serverComment);
         await board.save();
 
         // Broadcast to all users in the board
         const roomName = `board:${boardId}`;
-        io.to(roomName).emit('comment-added', { comment });
+        io.to(roomName).emit('comment-added', { comment: serverComment });
 
         console.log(`💬 Comment added to board ${boardId} by ${socket.user.name}`);
       } catch (error) {
@@ -454,8 +460,12 @@ export const setupSocketHandlers = (io) => {
         if (!board || !board.comments) return;
 
         const comment = board.comments.find(c => c.id === commentId);
-        if (!comment || comment.userId !== socket.userId) {
-          socket.emit('error', { message: 'Cannot edit this comment' });
+        if (!comment) {
+          socket.emit('error', { message: 'Comment not found', commentId });
+          return;
+        }
+        if (comment.userId.toString() !== socket.userId.toString()) {
+          socket.emit('error', { message: 'Cannot edit this comment: userId mismatch', commentUserId: comment.userId, socketUserId: socket.userId });
           return;
         }
 
@@ -470,7 +480,7 @@ export const setupSocketHandlers = (io) => {
         console.log(`💬 Comment updated in board ${boardId} by ${socket.user.name}`);
       } catch (error) {
         console.error('Error updating comment:', error);
-        socket.emit('error', { message: 'Failed to update comment' });
+        socket.emit('error', { message: 'Failed to update comment', error: error.message });
       }
     });
 
@@ -483,8 +493,12 @@ export const setupSocketHandlers = (io) => {
         if (!board || !board.comments) return;
 
         const comment = board.comments.find(c => c.id === commentId);
-        if (!comment || comment.userId !== socket.userId) {
-          socket.emit('error', { message: 'Cannot delete this comment' });
+        if (!comment) {
+          socket.emit('error', { message: 'Comment not found', commentId });
+          return;
+        }
+        if (comment.userId.toString() !== socket.userId.toString()) {
+          socket.emit('error', { message: 'Cannot delete this comment: userId mismatch', commentUserId: comment.userId, socketUserId: socket.userId });
           return;
         }
 
@@ -498,7 +512,7 @@ export const setupSocketHandlers = (io) => {
         console.log(`💬 Comment deleted from board ${boardId} by ${socket.user.name}`);
       } catch (error) {
         console.error('Error deleting comment:', error);
-        socket.emit('error', { message: 'Failed to delete comment' });
+        socket.emit('error', { message: 'Failed to delete comment', error: error.message });
       }
     });
 

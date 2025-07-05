@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useBoardStore } from '../stores/boardStore';
 import { useAuthStore } from '../stores/authStore';
@@ -43,39 +43,22 @@ const Dashboard = () => {
 
   useEffect(() => {
     setIsVisible(true);
-    const loadBoards = async () => {
+    
+    // Fetch boards when component mounts
+    const loadInitialBoards = async () => {
       try {
-        // Get auth state
-        const { token, user } = useAuthStore.getState();
-        
-        console.log('Dashboard - Current auth state:', { 
-          hasToken: !!token, 
-          hasUser: !!user,
-          userId: user?.id
-        });
-        
-        // Fetch boards
         const result = await fetchBoards();
-        
-        console.log('Dashboard - Boards loaded:', result);
-        console.log('Dashboard - Available boards:', boards?.length || 0);
-        
-        if (Array.isArray(boards) && boards.length > 0) {
-          // Log the first board to check structure
-          console.log('Dashboard - First board details:', {
-            id: boards[0]._id,
-            title: boards[0].title,
-            owner: boards[0].owner?._id || boards[0].owner,
-            isOwner: user && (boards[0].owner?._id === user.id || boards[0].owner === user.id)
-          });
+        if (!result.success) {
+          console.error('Failed to load boards');
         }
       } catch (error) {
         console.error('Dashboard - Error loading boards:', error);
       }
     };
     
-    loadBoards();
-  }, [fetchBoards, boards]);
+    loadInitialBoards();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - we only want to fetch once on mount
 
   const filteredBoards = Array.isArray(boards) 
     ? boards.filter(board =>

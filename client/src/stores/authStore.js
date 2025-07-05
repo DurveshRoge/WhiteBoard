@@ -264,7 +264,7 @@ const initializeAuthStore = () => {
   
   // Get the current auth state
   const state = useAuthStore.getState();
-  const { token, user } = state;
+  const { token } = state;
   
   // Set token in axios if we have one, regardless of initialization
   if (token) {
@@ -272,21 +272,13 @@ const initializeAuthStore = () => {
     console.log('Auth token set from storage');
   }
   
-  // Run the full initialization process
-  state.initializeAuth()
-    .then(result => {
-      if (result?.success) {
-        console.log('Auth initialized successfully on app load');
-      } else {
-        console.log('No valid authentication session found on app load');
-      }
-    })
-    .catch(err => {
-      console.error('Error initializing auth on app load:', err);
-    });
+  // Mark as rehydrated to indicate the store is ready
+  if (!state.isRehydrated) {
+    useAuthStore.setState({ isRehydrated: true });
+  }
 };
 
-// Initialize immediately for first load
+// Initialize immediately for first load - but only set token, don't run full auth
 initializeAuthStore();
 
 // Also initialize after storage changes

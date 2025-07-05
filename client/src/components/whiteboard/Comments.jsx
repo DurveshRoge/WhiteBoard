@@ -33,6 +33,7 @@ const Comments = ({ socket, boardId, user, isCommentsOpen, setIsCommentsOpen, se
     socket.on('comment-updated', handleCommentUpdated);
     socket.on('comment-deleted', handleCommentDeleted);
     socket.on('comment-reply-added', handleCommentReplyAdded);
+    socket.on('error', handleSocketError);
 
     return () => {
       socket.off('comments-loaded');
@@ -40,6 +41,7 @@ const Comments = ({ socket, boardId, user, isCommentsOpen, setIsCommentsOpen, se
       socket.off('comment-updated');
       socket.off('comment-deleted');
       socket.off('comment-reply-added');
+      socket.off('error', handleSocketError);
     };
   }, [socket, boardId, isCommentsOpen]);
 
@@ -80,10 +82,19 @@ const Comments = ({ socket, boardId, user, isCommentsOpen, setIsCommentsOpen, se
     ));
   };
 
+  const handleSocketError = (error) => {
+    if (error && error.message) {
+      alert(`Error: ${error.message}\nDetails: ${JSON.stringify(error, null, 2)}`);
+      console.error('Comment action error:', error);
+    } else {
+      alert(`Unknown error: ${JSON.stringify(error, null, 2)}`);
+      console.error('Unknown comment action error:', error);
+    }
+  };
+
   const handleAddComment = (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
-
+    if (!newComment.trim() || !socket) return;
     const comment = {
       id: Date.now().toString(),
       text: newComment,
@@ -95,13 +106,13 @@ const Comments = ({ socket, boardId, user, isCommentsOpen, setIsCommentsOpen, se
       timestamp: new Date().toISOString(),
       replies: []
     };
-
+    console.log('Emitting add-comment:', { boardId, comment });
     socket.emit('add-comment', { boardId, comment });
   };
 
   const handleUpdateComment = (commentId) => {
-    if (!editText.trim()) return;
-
+    if (!editText.trim() || !socket) return;
+    console.log('Emitting update-comment:', { boardId, commentId, text: editText });
     socket.emit('update-comment', { 
       boardId, 
       commentId, 
@@ -110,10 +121,13 @@ const Comments = ({ socket, boardId, user, isCommentsOpen, setIsCommentsOpen, se
   };
 
   const handleDeleteComment = (commentId) => {
+    if (!socket) return;
+    console.log('Emitting delete-comment:', { boardId, commentId });
     socket.emit('delete-comment', { boardId, commentId });
   };
 
   const handleAddReply = (parentId, replyText) => {
+    if (!socket) return;
     const reply = {
       id: Date.now().toString(),
       text: replyText,
@@ -122,7 +136,7 @@ const Comments = ({ socket, boardId, user, isCommentsOpen, setIsCommentsOpen, se
       userAvatar: user.avatarUrl,
       timestamp: new Date().toISOString()
     };
-
+    console.log('Emitting add-comment-reply:', { boardId, parentId, reply });
     socket.emit('add-comment-reply', { boardId, parentId, reply });
   };
 
@@ -160,7 +174,7 @@ const Comments = ({ socket, boardId, user, isCommentsOpen, setIsCommentsOpen, se
     : comments;
 
   return (
-    <div className={`fixed right-4 top-4 w-96 z-10 transition-all duration-300 ease-in-out ${
+    <div className={`fixed right-4 top-16 w-96 z-60 transition-all duration-300 ease-in-out ${
       isCommentsOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
     }`}>
       <div className="flex flex-col bg-white border border-gray-200 rounded-2xl shadow-2xl h-[600px] overflow-hidden">

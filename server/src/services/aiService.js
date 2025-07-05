@@ -4,38 +4,56 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialize AI services with fallbacks
 let openai = null;
 let genAI = null;
+let initialized = false;
 
-// Initialize OpenAI if API key is available
-if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
-  try {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-    console.log('✅ OpenAI initialized successfully');
-  } catch (error) {
-    console.warn('⚠️ Failed to initialize OpenAI:', error.message);
-  }
-} else {
-  console.warn('⚠️ OpenAI API key not configured - AI features will be limited');
-}
+// Initialize AI services (call this after environment variables are loaded)
+function initializeAIServices() {
+  if (initialized) return;
+  
 
-// Initialize Google Gemini if API key is available
-if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here') {
-  try {
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    console.log('✅ Google Gemini initialized successfully');
-  } catch (error) {
-    console.warn('⚠️ Failed to initialize Google Gemini:', error.message);
+  // Initialize OpenAI if API key is available
+  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
+    try {
+      openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      console.log('✅ OpenAI initialized successfully');
+    } catch (error) {
+      console.warn('⚠️ Failed to initialize OpenAI:', error.message);
+    }
+  } else {
+    console.warn('⚠️ OpenAI API key not configured - AI features will be limited');
   }
-} else {
-  console.warn('⚠️ Google Gemini API key not configured - AI features will be limited');
+
+  // Initialize Google Gemini if API key is available
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here') {
+    try {
+      genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      console.log('✅ Google Gemini initialized successfully');
+    } catch (error) {
+      console.warn('⚠️ Failed to initialize Google Gemini:', error.message);
+    }
+  } else {
+    console.warn('⚠️ Google Gemini API key not configured - AI features will be limited');
+  }
+  
+  initialized = true;
 }
 
 // AI Service class
 class AIService {
 
+  // Ensure AI services are initialized
+  ensureInitialized() {
+    if (!initialized) {
+      initializeAIServices();
+    }
+  }
+
   // Generate drawing suggestions based on text description
   async generateDrawingSuggestions(description, boardContext = '') {
+    this.ensureInitialized();
+    
     // Check if OpenAI is available
     if (!openai) {
       return {
@@ -488,4 +506,7 @@ class AIService {
   }
 }
 
-export default new AIService(); 
+const aiService = new AIService();
+
+export { initializeAIServices };
+export default aiService; 

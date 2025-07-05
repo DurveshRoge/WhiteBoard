@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import WhiteboardPage from './pages/WhiteboardPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import OAuthCallback from './pages/OAuthCallback';
 
 // Components
 import Navigation from './components/Navigation';
@@ -35,6 +36,8 @@ function App() {
         const result = await initializeAuth();
         if (result?.success) {
           console.log('Auth successfully initialized in App component');
+        } else if (result?.alreadyRunning) {
+          console.log('Auth initialization already in progress, skipping');
         } else {
           console.log('Auth initialization did not succeed in App component');
         }
@@ -44,10 +47,14 @@ function App() {
     };
     
     // Only run initialization if the store has been rehydrated from storage
-    if (isRehydrated) {
+    // and we're not already initialized (have user data)
+    if (isRehydrated && !user && token) {
+      console.log('Store rehydrated with token but no user, initializing auth');
       initialize();
+    } else if (isRehydrated) {
+      console.log('Store rehydrated, auth state:', { hasUser: !!user, hasToken: !!token });
     }
-  }, [initializeAuth, isRehydrated]);
+  }, [initializeAuth, isRehydrated, user, token]);
 
   if (loading) {
     return (
@@ -106,6 +113,10 @@ function App() {
           <Route 
             path="/register" 
             element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />} 
+          />
+          <Route 
+            path="/auth/callback" 
+            element={<OAuthCallback />} 
           />
           
           {/* Protected Routes */}
