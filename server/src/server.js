@@ -45,8 +45,11 @@ const io = new Server(server, {
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
-    allowedHeaders: ["Authorization", "Content-Type"]
-  }
+    allowedHeaders: ["Authorization", "Content-Type"],
+    exposedHeaders: ["Access-Control-Allow-Origin"]
+  },
+  allowEIO3: true,
+  transports: ['websocket', 'polling']
 });
 
 // Connect to MongoDB
@@ -103,7 +106,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  origin: [
+    process.env.CLIENT_URL || "http://localhost:3000",
+    "https://whiteboard-gray-rho.vercel.app",
+    "http://localhost:3000"
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -182,6 +189,11 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
+  console.log(`🌐 Allowed CORS Origins:`, [
+    process.env.CLIENT_URL || "http://localhost:3000",
+    "https://whiteboard-gray-rho.vercel.app",
+    "http://localhost:3000"
+  ]);
   console.log(`⚡ Socket.IO enabled`);
 });
 

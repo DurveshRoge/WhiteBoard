@@ -647,9 +647,15 @@ const WhiteboardPage = () => {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const socket = io(apiUrl, {
         path: '/socket.io',
+        transports: ['websocket', 'polling'],
+        upgrade: true,
+        rememberUpgrade: true,
+        timeout: 20000,
+        forceNew: true,
         auth: {
           token: useAuthStore.getState().token
-        }
+        },
+        withCredentials: true
       });
       
       // Close any existing connection
