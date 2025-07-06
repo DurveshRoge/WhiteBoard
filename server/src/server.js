@@ -38,7 +38,11 @@ const server = createServer(app);
 const io = new Server(server, {
   path: '/socket.io',
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: [
+      process.env.CLIENT_URL || "http://localhost:3000",
+      "https://whiteboard-gray-rho.vercel.app",
+      "http://localhost:3000"
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Authorization", "Content-Type"]

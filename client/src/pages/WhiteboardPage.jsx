@@ -644,7 +644,8 @@ const WhiteboardPage = () => {
     if (!user || !id) return;
     
     try {
-      const socket = io('/', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const socket = io(apiUrl, {
         path: '/socket.io',
         auth: {
           token: useAuthStore.getState().token
