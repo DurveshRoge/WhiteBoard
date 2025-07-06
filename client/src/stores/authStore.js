@@ -2,9 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
-// Configure axios defaults - use the proxy path instead of full URL
-// This will use Vite's proxy configuration from vite.config.js
-axios.defaults.baseURL = '/api';
+// Note: axios.defaults.baseURL is already configured in main.jsx
+// We don't need to override it here
 
 export const useAuthStore = create(
   persist(
