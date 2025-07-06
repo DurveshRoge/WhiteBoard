@@ -3,7 +3,7 @@ import axios from 'axios';
 // Export board data from server
 export const exportBoardData = async (boardId, format = 'png') => {
   try {
-    const response = await axios.get(`/boards/${boardId}/export?format=${format}`, {
+    const response = await axios.get(`/api/boards/${boardId}/export?format=${format}`, {
       responseType: format === 'json' ? 'blob' : 'json'
     });
     

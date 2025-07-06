@@ -32,7 +32,7 @@ export const useBoardStore = create((set, get) => ({
       // Log auth status for debugging
       console.log('Auth header present:', !!axios.defaults.headers.common['Authorization']);
       
-      const response = await axios.get('/boards');
+      const response = await axios.get('/api/boards');
       
       // Extract boards array from response, ensuring we handle different response formats
       let boards = [];
@@ -76,7 +76,7 @@ export const useBoardStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.post('/boards', { title, description });
+      const response = await axios.post('/api/boards', { title, description });
       const newBoard = response.data.data || response.data;
       
       set((state) => ({ 
@@ -132,7 +132,7 @@ export const useBoardStore = create((set, get) => ({
     console.log('User authenticated:', !!user, 'User ID:', user?.id);
     
     // Make the API request with proper error handling
-    const response = await axios.get(`/boards/${boardId}`);
+    const response = await axios.get(`/api/boards/${boardId}`);
     
     // Extract board data from response
     let board;
@@ -205,7 +205,7 @@ export const useBoardStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.put(`/boards/${boardId}`, updates);
+      const response = await axios.put(`/api/boards/${boardId}`, updates);
       const updatedBoard = response.data.data || response.data;
       
       set((state) => ({
@@ -233,7 +233,7 @@ export const useBoardStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      await axios.delete(`/boards/${boardId}`);
+      await axios.delete(`/api/boards/${boardId}`);
       
       set((state) => ({
         boards: state.boards.filter(board => board._id !== boardId),
@@ -258,7 +258,7 @@ export const useBoardStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.post(`/boards/${boardId}/share`, { 
+      const response = await axios.post(`/api/boards/${boardId}/share`, { 
         emails, 
         permission 
       });
@@ -309,7 +309,7 @@ export const useBoardStore = create((set, get) => ({
       useAuthStore.getState().setAuthToken(token);
       
       // Make a direct API request
-      const response = await axios.get(`/boards/${boardId}`);
+      const response = await axios.get(`/api/boards/${boardId}`);
       
       console.log('Board access check - Success:', response.data);
       return { 
@@ -338,7 +338,7 @@ export const useBoardStore = create((set, get) => ({
   // Archive a board
   archiveBoard: async (boardId) => {
     try {
-      const response = await axios.post(`/boards/${boardId}/archive`);
+      const response = await axios.post(`/api/boards/${boardId}/archive`);
       const updatedBoard = response.data.data;
       // Update board in state
       set((state) => ({
@@ -354,7 +354,7 @@ export const useBoardStore = create((set, get) => ({
   // Restore a board
   restoreBoard: async (boardId) => {
     try {
-      const response = await axios.post(`/boards/${boardId}/restore`);
+      const response = await axios.post(`/api/boards/${boardId}/restore`);
       const updatedBoard = response.data.data;
       set((state) => ({
         boards: state.boards.map(board => board._id === boardId ? updatedBoard : board),
@@ -369,7 +369,7 @@ export const useBoardStore = create((set, get) => ({
   // Get board analytics
   getBoardAnalytics: async (boardId) => {
     try {
-      const response = await axios.get(`/boards/${boardId}/analytics`);
+      const response = await axios.get(`/api/boards/${boardId}/analytics`);
       return { success: true, analytics: response.data.analytics };
     } catch (error) {
       return { success: false, error: error.response?.data?.message || 'Failed to fetch analytics' };
