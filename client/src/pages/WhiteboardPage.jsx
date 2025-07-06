@@ -1549,38 +1549,113 @@ const WhiteboardPage = () => {
   const handleApplySuggestion = (suggestion) => {
     // Convert AI suggestion to board element
     const element = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       type: suggestion.type,
-      x: suggestion.position?.x || 100,
-      y: suggestion.position?.y || 100,
-      ...suggestion.properties
+      x: suggestion.x || 100,
+      y: suggestion.y || 100,
+      width: suggestion.width,
+      height: suggestion.height,
+      radius: suggestion.radius,
+      text: suggestion.text,
+      fontSize: suggestion.fontSize || 16,
+      stroke: suggestion.stroke || strokeColor,
+      strokeWidth: suggestion.strokeWidth || strokeWidth,
+      fill: suggestion.fill || fillColor,
+      points: suggestion.points,
+      fontFamily: 'Arial'
     };
 
-    if (suggestion.type === 'text') {
-      setShapes(prev => [...prev, element]);
-    } else if (suggestion.type === 'pen') {
-      setLines(prev => [...prev, element]);
-    } else {
-      setShapes(prev => [...prev, element]);
-    }
+    setShapes(prev => [...prev, element]);
+    
+    // Add to history
+    const newHistory = {
+      lines: [...lines],
+      shapes: [...shapes, element]
+    };
+    setHistory(prev => [...prev.slice(0, historyStep + 1), newHistory]);
+    setHistoryStep(prev => prev + 1);
   };
 
   const handleApplyFlowchart = (flowchart) => {
     // Convert flowchart nodes to shapes
     const newShapes = flowchart.nodes.map(node => ({
       id: node.id,
-      type: node.type === 'diamond' ? 'diamond' : 'rectangle',
-      x: node.position.x,
-      y: node.position.y,
+      type: 'flowchart',
+      subType: node.type, // start, process, decision, end
+      x: node.x,
+      y: node.y,
       width: node.width,
       height: node.height,
       text: node.text,
       stroke: strokeColor,
       fill: fillColor,
-      strokeWidth
+      strokeWidth,
+      fontSize: 14,
+      fontFamily: 'Arial'
     }));
 
-    setShapes(prev => [...prev, ...newShapes]);
+    // Create connections as arrows
+    const connections = flowchart.connections?.map((conn, index) => {
+      const fromNode = flowchart.nodes.find(n => n.id === conn.from);
+      const toNode = flowchart.nodes.find(n => n.id === conn.to);
+      
+      if (!fromNode || !toNode) return null;
+      
+      // Calculate arrow points from center of one node to center of another
+      const fromX = fromNode.x + fromNode.width / 2;
+      const fromY = fromNode.y + fromNode.height / 2;
+      const toX = toNode.x + toNode.width / 2;
+      const toY = toNode.y + toNode.height / 2;
+      
+      return {
+        id: `arrow_${conn.from}_${conn.to}_${index}`,
+        type: 'arrow',
+        x: fromX,
+        y: fromY,
+        points: [0, 0, toX - fromX, toY - fromY],
+        stroke: strokeColor,
+        strokeWidth: 2,
+        pointerLength: 10,
+        pointerWidth: 10
+      };
+    }).filter(Boolean) || [];
+
+    // Add label texts for connections if they have labels
+    const connectionLabels = flowchart.connections?.map((conn, index) => {
+      if (!conn.label) return null;
+      
+      const fromNode = flowchart.nodes.find(n => n.id === conn.from);
+      const toNode = flowchart.nodes.find(n => n.id === conn.to);
+      
+      if (!fromNode || !toNode) return null;
+      
+      // Place label at midpoint
+      const midX = (fromNode.x + fromNode.width/2 + toNode.x + toNode.width/2) / 2;
+      const midY = (fromNode.y + fromNode.height/2 + toNode.y + toNode.height/2) / 2;
+      
+      return {
+        id: `label_${conn.from}_${conn.to}_${index}`,
+        type: 'text',
+        x: midX - 20,
+        y: midY - 10,
+        text: conn.label,
+        fontSize: 12,
+        fill: strokeColor,
+        fontFamily: 'Arial'
+      };
+    }).filter(Boolean) || [];
+
+    // Combine all elements
+    const allNewShapes = [...newShapes, ...connections, ...connectionLabels];
+    setShapes(prev => [...prev, ...allNewShapes]);
+    
+    // Add to history
+    const newHistory = {
+      lines: [...lines],
+      shapes: [...shapes, ...allNewShapes]
+    };
+    setHistory(prev => [...prev.slice(0, historyStep + 1), newHistory]);
+    setHistoryStep(prev => prev + 1);
   };
 
   const handleApplyColorScheme = (scheme) => {
@@ -3510,7 +3585,7 @@ const WhiteboardPage = () => {
                   );
                 } else if (shape.type === 'flowchart') {
                   const getFlowchartShape = () => {
-                    switch (shape.flowchartType) {
+                    switch (shape.subType) {
                       case 'start':
                       case 'end':
                         return (
@@ -3581,9 +3656,9 @@ const WhiteboardPage = () => {
                         id={`${shape.id}-text`}
                         x={shape.x}
                         y={shape.y}
-                        text={shape.label}
-                        fontSize={12}
-                        fontFamily="Arial"
+                        text={shape.text || shape.label}
+                        fontSize={shape.fontSize || 12}
+                        fontFamily={shape.fontFamily || "Arial"}
                         fill="#000000"
                         width={shape.width}
                         height={shape.height}

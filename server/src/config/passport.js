@@ -1,6 +1,5 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as FacebookStrategy } from 'passport-facebook';
 import User from '../models/User.js';
 
 // Initialize passport configuration after environment variables are loaded
@@ -44,53 +43,6 @@ export const initializePassport = () => {
       done(null, user);
     } catch (error) {
       console.error('Google OAuth error:', error);
-      done(error, null);
-    }
-  }));
-
-  // Facebook OAuth Strategy
-  passport.use(new FacebookStrategy({
-    clientID: process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.FACEBOOK_APP_SECRET,
-    callbackURL: "/api/auth/facebook/callback",
-    profileFields: ['id', 'displayName', 'emails', 'photos']
-  }, async (accessToken, refreshToken, profile, done) => {
-    try {
-      // Check if user already exists with this Facebook ID
-      let user = await User.findOne({ facebookId: profile.id });
-      
-      if (user) {
-        return done(null, user);
-      }
-      
-      // Check if user exists with same email
-      const email = profile.emails?.[0]?.value;
-      if (email) {
-        user = await User.findOne({ email });
-        
-        if (user) {
-          // Link Facebook account to existing user
-          user.facebookId = profile.id;
-          user.avatar = profile.photos?.[0]?.value || user.avatar;
-          await user.save();
-          return done(null, user);
-        }
-      }
-      
-      // Create new user
-      user = new User({
-        facebookId: profile.id,
-        name: profile.displayName,
-        email: email,
-        avatar: profile.photos?.[0]?.value,
-        emailVerified: !!email, // Facebook emails are pre-verified if available
-        provider: 'facebook'
-      });
-      
-      await user.save();
-      done(null, user);
-    } catch (error) {
-      console.error('Facebook OAuth error:', error);
       done(error, null);
     }
   }));

@@ -1,216 +1,344 @@
-# Advanced Collaborative Whiteboard SaaS
+# 🎨 Advanced Collaborative Whiteboard
 
-A comprehensive real-time collaborative whiteboard application built with MERN stack and WebSockets.
+A modern, real-time collaborative whiteboard application built with React, Node.js, Socket.io, and AI integration. Create, share, and collaborate on digital whiteboards with advanced features including AI-powered assistance, voice chat, and real-time synchronization.
 
-## 🚀 Features
+## 🌟 Features
 
-- **Real-time Collaboration**: Multiple users can work simultaneously on the same whiteboard
-- **Advanced Drawing Tools**: Shapes, freehand drawing, text, sticky notes
-- **User Management**: Authentication, roles, and permissions
-- **Room System**: Public/private boards with access control
-- **Communication**: WebRTC audio chat and text chat
-- **Export Options**: PNG, PDF export capabilities
-- **AI Integration**: AI-powered flowchart generation
-- **Modern UI**: Built with Tailwind CSS and ShadCN UI
+### 🎨 **Digital Whiteboard**
+- **Real-time Drawing**: Smooth drawing experience with Konva.js
+- **Multiple Tools**: Pen, shapes (rectangle, circle, arrow), text, eraser
+- **Customization**: Color picker, stroke width control, fill options
+- **Navigation**: Zoom, pan, and canvas manipulation
+- **Export**: Save whiteboards as PDF or images
 
-## 🛠️ Tech Stack
+### 🤖 **AI-Powered Assistant**
+- **Gemini Integration**: AI suggestions for whiteboard improvements
+- **Smart Flowcharts**: AI-generated flowchart recommendations
+- **Content Analysis**: Intelligent suggestions based on whiteboard content
+- **Interactive Suggestions**: Apply AI recommendations with one click
+
+### 🎙️ **Voice & Audio**
+- **Voice Chat**: Real-time voice communication between collaborators
+- **Audio Controls**: Mute/unmute, volume control
+- **WebRTC Integration**: Peer-to-peer audio streaming
+- **Multi-user Support**: Voice chat with multiple participants
+
+### 👥 **Real-time Collaboration**
+- **Live Cursors**: See other users' cursor positions in real-time
+- **Simultaneous Editing**: Multiple users can draw simultaneously
+- **User Presence**: See who's online and active on the whiteboard
+- **Chat System**: Text chat panel for communication
+
+### 🔐 **Authentication & Security**
+- **Google OAuth**: Secure login with Google accounts
+- **Local Authentication**: Email/password registration and login
+- **Protected Routes**: Secure access to whiteboards
+- **Session Management**: Persistent user sessions
+
+### 📱 **Modern UI/UX**
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Tailwind CSS**: Beautiful, modern styling
+- **shadcn/ui Components**: Professional UI components
+- **Dark/Light Themes**: Customizable appearance
+- **Intuitive Interface**: Easy-to-use design
+
+## 🛠️ Technology Stack
 
 ### Frontend
-- **React 18** with **Vite** for fast development
-- **Tailwind CSS** for styling
-- **ShadCN UI** for component library
-- **react-konva** for canvas rendering
-- **Zustand** for state management
-- **Socket.io Client** for real-time communication
+- **React 19** - Modern UI library
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Professional UI components
+- **Konva.js** - 2D canvas library for drawing
+- **React Router** - Client-side routing
+- **Axios** - HTTP client
+- **Socket.io Client** - Real-time communication
+- **WebRTC (SimplePeer)** - Peer-to-peer audio/video
 
 ### Backend
-- **Express.js** for server framework
-- **MongoDB Atlas** for database
-- **Socket.io** for WebSocket connections
-- **JWT** for authentication
-- **Mongoose** for ODM
+- **Node.js** - Server runtime
+- **Express.js** - Web framework
+- **Socket.io** - Real-time WebSocket communication
+- **MongoDB** - Database with Mongoose ODM
+- **Passport.js** - Authentication middleware
+- **Google OAuth 2.0** - Social authentication
+- **JWT** - Token-based authentication
+- **bcryptjs** - Password hashing
 
-### Additional Technologies
-- **WebRTC** for audio chat
-- **PDF.js** for document annotation
-- **OpenAI/Gemini API** for AI features
-
-## 📁 Project Structure
-
-```
-whiteBoard/
-├── client/                 # React frontend
-│   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── pages/         # Page components
-│   │   ├── hooks/         # Custom hooks
-│   │   ├── store/         # Zustand stores
-│   │   ├── utils/         # Utility functions
-│   │   └── lib/           # Third-party integrations
-│   ├── public/
-│   └── package.json
-├── server/                # Express backend
-│   ├── src/
-│   │   ├── controllers/   # Route controllers
-│   │   ├── models/        # MongoDB models
-│   │   ├── middleware/    # Custom middleware
-│   │   ├── routes/        # API routes
-│   │   ├── socket/        # Socket.io handlers
-│   │   └── utils/         # Server utilities
-│   └── package.json
-├── shared/                # Shared types and utilities
-└── docs/                  # Documentation
-```
-
-## 🏗️ Development Phases
-
-### Phase 1: Boilerplate Setup ✅
-- [x] React (Vite) + Tailwind CSS + ShadCN setup
-- [x] Express backend with folder structure
-- [x] MongoDB Atlas connection
-- [x] Socket.io server setup
-- [x] Environment configuration
-
-### Phase 2: Advanced Whiteboard UI
-- [ ] react-konva canvas integration
-- [ ] Drawing tools (shapes, pen, text, sticky notes)
-- [ ] Element manipulation (drag, resize, rotate)
-- [ ] UI components (toolbar, color picker, layers)
-- [ ] Undo/redo functionality
-
-### Phase 3: Real-time Collaboration
-- [ ] Socket.io client integration
-- [ ] Real-time drawing synchronization
-- [ ] User presence and cursors
-- [ ] Room management
-- [ ] Session persistence
-
-### Phase 4: Authentication & Room System
-- [ ] JWT authentication
-- [ ] User management
-- [ ] Board permissions and roles
-- [ ] User dashboard
-
-### Phase 5: Communication & Replay
-- [ ] WebRTC audio chat
-- [ ] Text chat system
-- [ ] Board replay functionality
-- [ ] Version control and export
-
-### Phase 6: Extra Features & Polish
-- [ ] Minimap and navigation
-- [ ] Board templates
-- [ ] PDF annotation
-- [ ] AI assistant integration
-- [ ] Advanced UI features
+### AI & External Services
+- **Google Gemini AI** - AI-powered suggestions and content generation
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- MongoDB Atlas account
-- Git
+- Node.js 20.19.0 or higher
+- MongoDB database
+- Google OAuth credentials
+- Gemini AI API key
 
 ### Installation
 
-1. Clone the repository
+1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd whiteBoard
+cd WhiteBoard
 ```
 
-2. Install dependencies
+2. **Install root dependencies**
 ```bash
-# Install server dependencies
+npm install
+```
+
+3. **Setup Server**
+```bash
 cd server
 npm install
+```
 
-# Install client dependencies
+4. **Setup Client**
+```bash
 cd ../client
 npm install
 ```
 
-3. Environment Setup
-```bash
-# Copy environment files
-cp server/.env.example server/.env
-cp client/.env.example client/.env
-```
+### Environment Configuration
 
-4. Configure environment variables
-- Update MongoDB connection string
-- Set JWT secret
-- Configure Socket.io settings
+1. **Server Environment** (`server/.env`)
+```env
+# Database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/whiteboard
 
-5. Start development servers
-```bash
-# Start backend (from server directory)
-npm run dev
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRE=7d
 
-# Start frontend (from client directory)
-npm run dev
-```
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-## 🔧 Quick Setup with Your Credentials
+# AI Integration
+GEMINI_API_KEY=your-gemini-api-key
 
-Your environment files are already configured with your actual credentials:
-
-**Server Environment (.env):**
-- MongoDB: `mongodb+srv://Durveshroge:YOUR_PASSWORD@cluster0.kxdlj.mongodb.net/whiteboard`
-- Email: `durveshroge@gmail.com` 
-- OpenAI API: Configured
-- Gemini API: Configured
-
-**⚠️ Important**: You need to replace `<db_password>` in `server/.env` with your actual MongoDB password.
-
-### Start Development:
-```bash
-# Install all dependencies
-npm run install-all
-
-# Start both server and client
-npm run dev
-```
-
-**URLs:**
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
-
-## 📝 Environment Variables
-
-### Server (.env)
-```
+# Server Configuration
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
 ```
 
-### Client (.env)
-```
+2. **Client Environment** (`client/.env.development`)
+```env
 VITE_API_URL=http://localhost:5000
-VITE_SOCKET_URL=http://localhost:5000
 ```
+
+3. **Client Environment** (`client/.env.production`)
+```env
+VITE_API_URL=https://your-production-api-url.com
+```
+
+### Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials
+5. Add authorized redirect URIs:
+   - Development: `http://localhost:5000/api/auth/google/callback`
+   - Production: `https://your-domain.com/api/auth/google/callback`
+
+### Gemini AI Setup
+
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Create a new API key
+3. Add the key to your server environment variables
+
+## 🎯 Usage
+
+### Development
+
+1. **Start the server**
+```bash
+cd server
+npm run dev
+```
+
+2. **Start the client** (in a new terminal)
+```bash
+cd client
+npm run dev
+```
+
+3. **Access the application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:5000
+
+### Production
+
+1. **Build the client**
+```bash
+cd client
+npm run build
+```
+
+2. **Start the production server**
+```bash
+cd server
+npm start
+```
+
+## 🔧 Available Scripts
+
+### Root Directory
+- `npm install` - Install all dependencies (client + server)
+- `npm run dev` - Start both client and server in development
+- `npm run build` - Build client for production
+
+### Server (`/server`)
+- `npm run dev` - Start server with nodemon (development)
+- `npm start` - Start server (production)
+- `npm test` - Run tests
+- `npm run lint` - Lint code
+- `npm run lint:fix` - Fix linting issues
+
+### Client (`/client`)
+- `npm run dev` - Start Vite dev server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Lint code
+
+## 📁 Project Structure
+
+```
+WhiteBoard/
+├── client/                 # React frontend application
+│   ├── public/            # Static assets
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   │   ├── ui/        # shadcn/ui components
+│   │   │   └── whiteboard/ # Whiteboard-specific components
+│   │   ├── pages/         # Page components
+│   │   ├── stores/        # State management
+│   │   ├── lib/           # Utility functions
+│   │   └── assets/        # Images and icons
+│   ├── package.json
+│   └── vite.config.js
+├── server/                # Node.js backend application
+│   ├── src/
+│   │   ├── controllers/   # Route controllers
+│   │   ├── middleware/    # Express middleware
+│   │   ├── models/        # Database models
+│   │   ├── routes/        # API routes
+│   │   ├── services/      # Business logic services
+│   │   ├── socket/        # Socket.io handlers
+│   │   └── config/        # Configuration files
+│   └── package.json
+├── package.json           # Root package.json
+└── README.md
+```
+
+## 🚀 Deployment
+
+### Vercel Deployment (Recommended)
+
+The project is configured for easy deployment on Vercel:
+
+1. **Deploy Backend**
+   - Connect your repository to Vercel
+   - Set environment variables in Vercel dashboard
+   - Deploy the `/server` directory
+
+2. **Deploy Frontend**
+   - Deploy the `/client` directory
+   - Update `VITE_API_URL` to point to your backend URL
+
+### Manual Deployment
+
+1. **Build the application**
+```bash
+npm run build
+```
+
+2. **Deploy to your hosting provider**
+   - Upload the `client/dist` folder for the frontend
+   - Upload the `server` folder for the backend
+   - Set up environment variables
+   - Start the server with `npm start`
+
+## 🧪 Testing
+
+### Running Tests
+```bash
+# Server tests
+cd server
+npm test
+
+# Client tests (if added)
+cd client
+npm test
+```
+
+### Manual Testing Features
+
+1. **Authentication**
+   - Register with email/password
+   - Login with Google OAuth
+   - Access protected routes
+
+2. **Whiteboard Collaboration**
+   - Create a new whiteboard
+   - Invite collaborators
+   - Test real-time drawing
+   - Verify cursor positions
+
+3. **AI Features**
+   - Ask for AI suggestions
+   - Generate flowcharts
+   - Apply AI recommendations
+
+4. **Voice Chat**
+   - Enable microphone permissions
+   - Test audio with multiple users
+   - Verify mute/unmute functionality
+
+## 🔧 Configuration
+
+### Socket.io Configuration
+Real-time features can be configured in `server/src/socket/socketHandlers.js`
+
+### AI Configuration
+AI features can be customized in `server/src/services/aiService.js`
+
+### Database Configuration
+MongoDB settings in `server/src/config/database.js`
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👥 Team
+## 🆘 Support
 
-- **Developer**: [Your Name]
-- **Project Type**: Final Year Project
-- **Duration**: [Project Timeline]
+If you encounter any issues or have questions:
+
+1. Check the [Issues](https://github.com/your-username/whiteboard/issues) page
+2. Create a new issue with detailed information
+3. Include error messages and reproduction steps
+
+## 🙏 Acknowledgments
+
+- [React](https://reactjs.org/) for the amazing UI library
+- [Socket.io](https://socket.io/) for real-time communication
+- [Konva.js](https://konvajs.org/) for the canvas functionality
+- [Tailwind CSS](https://tailwindcss.com/) for styling
+- [shadcn/ui](https://ui.shadcn.com/) for UI components
+- [Google Gemini](https://ai.google.dev/) for AI capabilities
 
 ---
 
-*Built with ❤️ for collaborative creativity*
+Made with ❤️ Durvesh Roge

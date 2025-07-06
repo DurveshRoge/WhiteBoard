@@ -52,7 +52,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/ai/suggestions', {
+      const response = await axios.post('/ai/suggestions', {
         description: description.trim(),
         boardContext: boardTitle
       });
@@ -76,7 +76,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/ai/flowchart', {
+      const response = await axios.post('/ai/flowchart', {
         description: description.trim()
       });
 
@@ -99,7 +99,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/ai/analyze', {
+      const response = await axios.post('/ai/analyze', {
         elements: elements,
         boardTitle: boardTitle
       });
@@ -123,7 +123,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/ai/text-suggestions', {
+      const response = await axios.post('/ai/text-suggestions', {
         context: context.trim(),
         currentText: currentText.trim()
       });
@@ -142,7 +142,7 @@ const AIAssistant = ({
   const generateColorScheme = async () => {
     setLoading(true);
     try {
-      const response = await axios.post('/api/ai/color-scheme', {
+      const response = await axios.post('/ai/color-scheme', {
         boardType: boardType
       });
 
@@ -259,7 +259,8 @@ const AIAssistant = ({
                       <p className="text-sm text-gray-700 mb-2">{suggestion.explanation}</p>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-500">
-                          Type: {suggestion.type} | Position: ({suggestion.position?.x}, {suggestion.position?.y})
+                          Type: {suggestion.type} | Position: ({suggestion.x}, {suggestion.y})
+                          {suggestion.text && ` | Text: "${suggestion.text}"`}
                         </span>
                         <Button
                           size="sm"

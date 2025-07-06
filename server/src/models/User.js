@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: function() {
       // Password is required only if user doesn't have OAuth providers
-      return !this.googleId && !this.facebookId;
+      return !this.googleId;
     },
     minlength: [6, 'Password must be at least 6 characters'],
     select: false
@@ -50,13 +50,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  facebookId: {
-    type: String,
-    default: null
-  },
   provider: {
     type: String,
-    enum: ['local', 'google', 'facebook'],
+    enum: ['local', 'google'],
     default: 'local'
   },
   verificationToken: String,

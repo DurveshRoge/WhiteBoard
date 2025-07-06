@@ -23,9 +23,6 @@ const OAuthCallback = () => {
           case 'google_failed':
             errorMessage = 'Google authentication failed';
             break;
-          case 'facebook_failed':
-            errorMessage = 'Facebook authentication failed';
-            break;
           default:
             errorMessage = 'Authentication failed';
         }

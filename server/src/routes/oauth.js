@@ -46,16 +46,4 @@ router.get('/google/callback',
   handleOAuthSuccess
 );
 
-// Facebook OAuth Routes
-router.get('/facebook',
-  passport.authenticate('facebook', { 
-    scope: ['email'] 
-  })
-);
-
-router.get('/facebook/callback',
-  passport.authenticate('facebook', { failureRedirect: `${process.env.CLIENT_URL}/login?error=facebook_failed` }),
-  handleOAuthSuccess
-);
-
 export default router;
