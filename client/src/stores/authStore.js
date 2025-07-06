@@ -49,7 +49,7 @@ export const useAuthStore = create(
           
           console.log('Refreshing session with token');
           // Add timestamp to prevent caching issues
-          const response = await axios.get('/auth/me', { 
+          const response = await axios.get('/api/auth/me', { 
             params: { _t: now } 
           });
           
@@ -91,7 +91,7 @@ export const useAuthStore = create(
         try {
           set({ loading: true, error: null });
           
-          const response = await axios.post('/auth/login', { email, password });
+          const response = await axios.post('/api/auth/login', { email, password });
           const { token, user } = response.data;
           
           // Set token in axios headers
@@ -122,7 +122,7 @@ export const useAuthStore = create(
         try {
           set({ loading: true, error: null });
           
-          const response = await axios.post('/auth/register', { name, email, password });
+          const response = await axios.post('/api/auth/register', { name, email, password });
           const { token, user } = response.data;
           
           // Set token in axios headers
