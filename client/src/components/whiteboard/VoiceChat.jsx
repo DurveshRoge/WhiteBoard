@@ -184,8 +184,12 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     // Create peers for existing users - we are the initiator for existing users
     if (data.peers && data.peers.length > 0) {
       data.peers.forEach(peerData => {
-        console.log('Creating peer for existing user:', peerData.userId);
-        createPeer(peerData.userId, true); // We initiate to existing users
+        if (peerData.userId !== user.id) {
+          console.log('Creating peer for existing user:', peerData.userId);
+          createPeer(peerData.userId, true); // We initiate to existing users
+        } else {
+          console.log('Skipping self-connection for user:', peerData.userId);
+        }
       });
     } else {
       console.log('No existing peers in voice chat');
