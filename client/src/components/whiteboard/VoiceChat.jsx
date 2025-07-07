@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button } from '../ui/Button';
 import { toast } from 'sonner';
+import Peer from 'simple-peer';
 
 const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsVoiceChatOpen }) => {
   const [isMuted, setIsMuted] = useState(false);
@@ -17,21 +18,32 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
   const [peers, setPeers] = useState(new Map());
   const [localStream, setLocalStream] = useState(null);
   const [speakingUsers, setSpeakingUsers] = useState(new Set());
+  const [voiceUsers, setVoiceUsers] = useState(new Set());
   
   const localVideoRef = useRef();
   const peerRefs = useRef(new Map());
   const streamRef = useRef();
+  const audioContextRef = useRef();
+  const analyserRef = useRef();
 
   useEffect(() => {
     if (!socket || !isVoiceChatOpen) return;
 
     // Request microphone access
     navigator.mediaDevices.getUserMedia({ 
-      audio: true, 
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 44100
+      }, 
       video: false 
     }).then(stream => {
       setLocalStream(stream);
       streamRef.current = stream;
+      
+      // Set up voice activity detection
+      setupVoiceActivityDetection(stream);
       
       // Join voice chat room
       socket.emit('join-voice-chat', { boardId });
@@ -46,56 +58,142 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     socket.on('user-left-voice', handleUserLeftVoice);
     socket.on('voice-signal', handleVoiceSignal);
     socket.on('voice-ice-candidate', handleVoiceIceCandidate);
-    socket.on('user-speaking', handleUserSpeaking);
-    socket.on('user-stopped-speaking', handleUserStoppedSpeaking);
 
     return () => {
       // Cleanup
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      // Cleanup all peers
+      peerRefs.current.forEach(({ peer, audio }) => {
+        if (peer) peer.destroy();
+        if (audio && audio.parentNode) audio.parentNode.removeChild(audio);
+      });
+      peerRefs.current.clear();
+      
       socket.emit('leave-voice-chat', { boardId });
       socket.off('voice-chat-joined');
       socket.off('user-joined-voice');
       socket.off('user-left-voice');
       socket.off('voice-signal');
       socket.off('voice-ice-candidate');
-      socket.off('user-speaking');
-      socket.off('user-stopped-speaking');
     };
   }, [socket, boardId, isVoiceChatOpen]);
+
+  const setupVoiceActivityDetection = (stream) => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      
+      analyser.smoothingTimeConstant = 0.8;
+      analyser.fftSize = 1024;
+      
+      microphone.connect(analyser);
+      
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+      
+      // Start monitoring voice activity
+      monitorVoiceActivity();
+    } catch (error) {
+      console.error('Error setting up voice activity detection:', error);
+    }
+  };
+
+  const monitorVoiceActivity = () => {
+    if (!analyserRef.current) return;
+    
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    
+    const checkAudio = () => {
+      if (!analyserRef.current) return;
+      
+      analyserRef.current.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+      
+      const isSpeaking = average > 20 && !isMuted; // Threshold for speaking detection
+      
+      if (isSpeaking && !speakingUsers.has(user?.id)) {
+        setSpeakingUsers(prev => new Set(prev.add(user?.id)));
+      } else if (!isSpeaking && speakingUsers.has(user?.id)) {
+        setSpeakingUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(user?.id);
+          return newSet;
+        });
+      }
+      
+      requestAnimationFrame(checkAudio);
+    };
+    
+    checkAudio();
+  };
 
   const handleVoiceChatJoined = (data) => {
     console.log('Joined voice chat:', data);
     setIsInCall(true);
     
-    // Connect to existing peers
-    data.peers.forEach(peerData => {
-      createPeer(peerData.userId, peerData.signal);
-    });
+    // Create peers for existing users
+    if (data.peers && data.peers.length > 0) {
+      data.peers.forEach(peerData => {
+        console.log('Creating peer for existing user:', peerData.userId);
+        createPeer(peerData.userId, false); // We initiate the call
+      });
+    }
   };
 
   const handleUserJoinedVoice = (data) => {
     console.log('User joined voice chat:', data);
-    createPeer(data.userId);
+    setVoiceUsers(prev => new Set(prev.add(data.userId)));
+    // Don't create peer here - let the new user initiate
   };
 
   const handleUserLeftVoice = (data) => {
     console.log('User left voice chat:', data);
+    setVoiceUsers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(data.userId);
+      return newSet;
+    });
+    setSpeakingUsers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(data.userId);
+      return newSet;
+    });
     removePeer(data.userId);
   };
 
-  const createPeer = (userId, signal = null) => {
-    if (!streamRef.current) return;
+  const createPeer = (userId, initiator = true) => {
+    if (!streamRef.current) {
+      console.error('No local stream available');
+      return;
+    }
 
-    const Peer = require('simple-peer');
+    if (peers.has(userId)) {
+      console.log('Peer already exists for user:', userId);
+      return;
+    }
+
+    console.log(`Creating peer for user ${userId}, initiator: ${initiator}`);
+
     const peer = new Peer({
-      initiator: !signal,
+      initiator,
       trickle: false,
-      stream: streamRef.current
+      stream: streamRef.current,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      }
     });
 
     peer.on('signal', (signal) => {
+      console.log('Sending signal to user:', userId, signal.type);
       socket.emit('voice-signal', { 
         boardId, 
         userId, 
@@ -104,33 +202,57 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     });
 
     peer.on('stream', (remoteStream) => {
+      console.log('Received remote stream from user:', userId);
+      
       // Create audio element for remote stream
       const audio = document.createElement('audio');
       audio.srcObject = remoteStream;
       audio.autoplay = true;
       audio.volume = isDeafened ? 0 : 1;
+      audio.style.display = 'none';
+      
+      // Add to document to ensure it plays
+      document.body.appendChild(audio);
       
       // Store reference
       peerRefs.current.set(userId, { peer, audio });
+      setVoiceUsers(prev => new Set(prev.add(userId)));
+      
+      // Play the audio
+      audio.play().catch(err => {
+        console.error('Error playing remote audio:', err);
+      });
+    });
+
+    peer.on('connect', () => {
+      console.log('Peer connected:', userId);
     });
 
     peer.on('error', (err) => {
-      console.error('Peer error:', err);
+      console.error('Peer error with user', userId, ':', err);
       removePeer(userId);
     });
 
-    if (signal) {
-      peer.signal(signal);
-    }
+    peer.on('close', () => {
+      console.log('Peer connection closed:', userId);
+      removePeer(userId);
+    });
 
     setPeers(prev => new Map(prev.set(userId, peer)));
+    return peer;
   };
 
   const removePeer = (userId) => {
+    console.log('Removing peer:', userId);
+    
     const peerData = peerRefs.current.get(userId);
     if (peerData) {
-      peerData.peer.destroy();
-      peerData.audio.remove();
+      if (peerData.peer) {
+        peerData.peer.destroy();
+      }
+      if (peerData.audio && peerData.audio.parentNode) {
+        peerData.audio.parentNode.removeChild(peerData.audio);
+      }
       peerRefs.current.delete(userId);
     }
     
@@ -139,32 +261,43 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
       newPeers.delete(userId);
       return newPeers;
     });
+    
+    setVoiceUsers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(userId);
+      return newSet;
+    });
   };
 
   const handleVoiceSignal = (data) => {
-    const peer = peers.get(data.userId);
-    if (peer) {
-      peer.signal(data.signal);
+    console.log('Received signal from user:', data.userId, data.signal?.type);
+    
+    let peer = peers.get(data.userId);
+    
+    if (!peer) {
+      // If we don't have a peer yet, create one as non-initiator
+      peer = createPeer(data.userId, false);
+    }
+    
+    if (peer && data.signal) {
+      try {
+        peer.signal(data.signal);
+      } catch (error) {
+        console.error('Error handling signal:', error);
+      }
     }
   };
 
   const handleVoiceIceCandidate = (data) => {
+    console.log('Received ICE candidate from user:', data.userId);
     const peer = peers.get(data.userId);
-    if (peer) {
-      peer.signal(data.candidate);
+    if (peer && data.candidate) {
+      try {
+        peer.signal(data.candidate);
+      } catch (error) {
+        console.error('Error handling ICE candidate:', error);
+      }
     }
-  };
-
-  const handleUserSpeaking = (data) => {
-    setSpeakingUsers(prev => new Set(prev.add(data.userId)));
-  };
-
-  const handleUserStoppedSpeaking = (data) => {
-    setSpeakingUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(data.userId);
-      return newSet;
-    });
   };
 
   const toggleMute = () => {
@@ -173,16 +306,28 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsMuted(!audioTrack.enabled);
+        
+        // Update voice activity detection
+        if (!audioTrack.enabled) {
+          setSpeakingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(user?.id);
+            return newSet;
+          });
+        }
       }
     }
   };
 
   const toggleDeafen = () => {
-    setIsDeafened(!isDeafened);
+    const newDeafenState = !isDeafened;
+    setIsDeafened(newDeafenState);
     
     // Update volume for all remote streams
     peerRefs.current.forEach(({ audio }) => {
-      audio.volume = isDeafened ? 1 : 0;
+      if (audio) {
+        audio.volume = newDeafenState ? 0 : 1;
+      }
     });
   };
 
@@ -192,11 +337,13 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     
     // Cleanup all peers
     peerRefs.current.forEach(({ peer, audio }) => {
-      peer.destroy();
-      audio.remove();
+      if (peer) peer.destroy();
+      if (audio && audio.parentNode) audio.parentNode.removeChild(audio);
     });
     peerRefs.current.clear();
     setPeers(new Map());
+    setVoiceUsers(new Set());
+    setSpeakingUsers(new Set());
     
     // Stop local stream
     if (streamRef.current) {
@@ -204,12 +351,23 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
       streamRef.current = null;
     }
     
+    // Close audio context
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    
     socket.emit('leave-voice-chat', { boardId });
   };
 
   const getActiveVoiceUsers = () => {
-    return activeUsers.filter(user => 
-      peers.has(user.id) || user.id === user?.id
+    const currentVoiceUsers = Array.from(voiceUsers);
+    // Add current user if in call
+    if (isInCall && user?.id && !currentVoiceUsers.includes(user.id)) {
+      currentVoiceUsers.push(user.id);
+    }
+    
+    return activeUsers.filter(activeUser => 
+      currentVoiceUsers.includes(activeUser.id) || activeUser.id === user?.id
     );
   };
 
@@ -313,6 +471,15 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
             {isMuted ? 'Microphone muted' : 'Microphone active'}
             {isDeafened && ' • Audio disabled'}
           </p>
+          {/* Debug info */}
+          <div className="mt-1 text-xs text-gray-400">
+            Peers: {peers.size} | Voice Users: {voiceUsers.size}
+          </div>
+          {localStream && (
+            <div className="text-xs text-green-500">
+              Local stream: {localStream.getAudioTracks().length} audio tracks
+            </div>
+          )}
         </div>
       </div>
     </div>
