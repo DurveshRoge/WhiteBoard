@@ -54,7 +54,12 @@ router.get('/google',
 );
 
 router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/login?error=google_failed` }),
+  passport.authenticate('google', { 
+    failureRedirect: `${process.env.CLIENT_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://whiteboard-gray-rho.vercel.app'
+        : 'http://localhost:3000')}/login?error=google_failed` 
+  }),
   handleOAuthSuccess
 );
 
