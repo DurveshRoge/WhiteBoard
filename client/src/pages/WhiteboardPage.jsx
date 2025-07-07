@@ -2409,15 +2409,6 @@ const WhiteboardPage = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setIsVoiceChatOpen(!isVoiceChatOpen)}
-          >
-            <MicrophoneIcon className="w-4 h-4 mr-2" />
-            Voice
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm"
             onClick={() => setIsCommentsOpen(!isCommentsOpen)}
           >
             <ChatBubbleLeftIcon className="w-4 h-4 mr-2" />
