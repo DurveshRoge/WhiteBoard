@@ -178,11 +178,6 @@ export const useAuthStore = create(
           // Mark initialization as in progress
           set({ initializationInProgress: true });
           
-          // Set rehydrated flag to indicate we've checked the auth state
-          if (!isRehydrated) {
-            set({ isRehydrated: true });
-          }
-          
           if (token) {
             console.log('Found stored token, attempting to restore session');
             
@@ -253,6 +248,19 @@ export const useAuthStore = create(
         user: state.user, 
         token: state.token 
       }),
+      onRehydrateStorage: () => (state) => {
+        console.log('Auth store rehydrated from persistence');
+        if (state) {
+          // Set the rehydrated flag
+          state.isRehydrated = true;
+          
+          // Set auth token if we have one
+          if (state.token) {
+            state.setAuthToken(state.token);
+            console.log('Auth token restored from storage');
+          }
+        }
+      },
     }
   )
 );

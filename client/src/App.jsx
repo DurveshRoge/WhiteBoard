@@ -46,17 +46,26 @@ function App() {
       }
     };
     
-    // Only run initialization if the store has been rehydrated from storage
-    // and we're not already initialized (have user data)
-    if (isRehydrated && !user && token) {
-      console.log('Store rehydrated with token but no user, initializing auth');
-      initialize();
-    } else if (isRehydrated) {
-      console.log('Store rehydrated, auth state:', { hasUser: !!user, hasToken: !!token });
+    // Only run initialization if the store has been rehydrated
+    if (isRehydrated) {
+      if (token && !user) {
+        // We have a token but no user - need to restore session
+        console.log('Store rehydrated with token but no user, initializing auth');
+        initialize();
+      } else if (token && user) {
+        // We have both token and user - set token in axios headers
+        console.log('Store rehydrated with both token and user, setting auth token');
+        setAuthToken(token);
+      } else {
+        // No token - user needs to log in, no initialization needed
+        console.log('Store rehydrated with no token, ready for login');
+      }
     }
-  }, [initializeAuth, isRehydrated, user, token]);
+  }, [initializeAuth, isRehydrated, user, token, setAuthToken]);
 
-  if (loading) {
+  // Show loading only when we're actually initializing (not just waiting for rehydration)
+  // and only if we have a token that needs validation
+  if (!isRehydrated || (loading && token)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="text-center">
