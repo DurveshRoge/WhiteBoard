@@ -20,7 +20,7 @@ A modern, real-time collaborative whiteboard application built with React, Node.
 ### 🎙️ **Voice & Audio**
 - **Voice Chat**: Real-time voice communication between collaborators
 - **Audio Controls**: Mute/unmute, volume control
-- **WebRTC Integration**: Peer-to-peer audio streaming
+- **Jitsi Meet Integration**: Audio-only group voice chat using Jitsi Meet
 - **Multi-user Support**: Voice chat with multiple participants
 
 ### 👥 **Real-time Collaboration**
@@ -53,7 +53,7 @@ A modern, real-time collaborative whiteboard application built with React, Node.
 - **React Router** - Client-side routing
 - **Axios** - HTTP client
 - **Socket.io Client** - Real-time communication
-- **WebRTC (SimplePeer)** - Peer-to-peer audio/video
+- **Jitsi Meet IFrame API** - Embedded audio chat
 
 ### Backend
 - **Node.js** - Server runtime
@@ -211,7 +211,6 @@ npm start
 WhiteBoard/
 ├── client/                 # React frontend application
 │   ├── public/            # Static assets
-│   ├── src/
 │   │   ├── components/    # Reusable UI components
 │   │   │   ├── ui/        # shadcn/ui components
 │   │   │   └── whiteboard/ # Whiteboard-specific components
@@ -342,3 +341,42 @@ If you encounter any issues or have questions:
 ---
 
 Made with ❤️ Durvesh Roge
+
+## Voice Chat (Jitsi Meet Integration)
+
+- **Audio-only voice chat** is available on every board.
+- Click the floating phone button (bottom left) to join the board's voice room.
+- A small, modern panel will appear for the call. Click the red hangup button to leave.
+- Each board gets a unique Jitsi Meet room for voice chat.
+- No video is enabled; only microphone is used.
+- No extra backend setup is required for voice chat—Jitsi Meet is used via their public cloud.
+
+### Dependencies
+- [Jitsi Meet IFrame API](https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe)
+- React, Tailwind CSS, Heroicons
+
+### UI/UX
+- Floating phone button at bottom left (with margin, not overlapping tools)
+- Jitsi Meet panel appears above the button, rounded and shadowed
+- Only microphone and hangup controls are shown
+
+---
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+2. Start the development server:
+   ```bash
+   npm start
+   # or
+   yarn start
+   ```
+
+---
+
+For more details, see the code in `client/src/components/whiteboard/VoiceChat.jsx`.
