@@ -1,0 +1,37 @@
+{
+  "name": "WhiteBoard - Collaborative Real-time Whiteboard",
+  "short_name": "WhiteBoard",
+  "description": "Create, collaborate, and share ideas in real-time with WhiteBoard - the ultimate collaborative whiteboard platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/whiteboard-favicon.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.svg", 
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "business", "education"],
+  "screenshots": [
+    {
+      "src": "/whiteboard-favicon.svg",
+      "sizes": "32x32", 
+      "type": "image/svg+xml"
+    }
+  ]
+}

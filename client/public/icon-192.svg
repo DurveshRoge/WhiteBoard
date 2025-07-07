@@ -1,0 +1,15 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded rectangle background -->
+  <rect x="12" y="12" width="168" height="168" rx="36" ry="36" fill="url(#bgGradient192)" />
+  
+  <!-- White "W" letter -->
+  <text x="96" y="132" font-family="Arial, sans-serif" font-size="108" font-weight="bold" text-anchor="middle" fill="white">W</text>
+</svg>
