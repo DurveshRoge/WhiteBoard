@@ -542,6 +542,89 @@ export const setupSocketHandlers = (io) => {
       }
     });
 
+    // Additional WebRTC Voice Chat Handlers
+    socket.on('voice-offer', ({ targetUserId, offer, boardId }) => {
+      console.log(`🎤 Voice offer from ${socket.userId} to ${targetUserId}`);
+      const targetSocketId = userSockets.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('voice-offer', {
+          fromUserId: socket.userId,
+          fromUserName: socket.user.name,
+          offer,
+          boardId
+        });
+      }
+    });
+
+    socket.on('voice-answer', ({ targetUserId, answer, boardId }) => {
+      console.log(`🎤 Voice answer from ${socket.userId} to ${targetUserId}`);
+      const targetSocketId = userSockets.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('voice-answer', {
+          fromUserId: socket.userId,
+          answer,
+          boardId
+        });
+      }
+    });
+
+    socket.on('voice-ice-candidate', ({ targetUserId, candidate, boardId }) => {
+      console.log(`🎤 ICE candidate from ${socket.userId} to ${targetUserId}`);
+      const targetSocketId = userSockets.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('voice-ice-candidate', {
+          fromUserId: socket.userId,
+          candidate,
+          boardId
+        });
+      }
+    });
+
+    socket.on('voice-call-request', ({ targetUserId, boardId }) => {
+      console.log(`📞 Voice call request from ${socket.userId} to ${targetUserId}`);
+      const targetSocketId = userSockets.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('voice-call-request', {
+          fromUserId: socket.userId,
+          fromUserName: socket.user.name,
+          fromUserAvatar: socket.user.avatar,
+          boardId
+        });
+      }
+    });
+
+    socket.on('voice-call-response', ({ targetUserId, accepted, boardId }) => {
+      console.log(`📞 Voice call response from ${socket.userId} to ${targetUserId}: ${accepted}`);
+      const targetSocketId = userSockets.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('voice-call-response', {
+          fromUserId: socket.userId,
+          accepted,
+          boardId
+        });
+      }
+    });
+
+    socket.on('voice-call-end', ({ targetUserId, boardId }) => {
+      console.log(`📞 Voice call ended by ${socket.userId}`);
+      const targetSocketId = userSockets.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('voice-call-end', {
+          fromUserId: socket.userId,
+          boardId
+        });
+      }
+    });
+
+    socket.on('voice-mute-toggle', ({ boardId, muted }) => {
+      console.log(`🎤 ${socket.userId} ${muted ? 'muted' : 'unmuted'} microphone`);
+      const roomName = `board:${boardId}`;
+      socket.to(roomName).emit('user-voice-status', {
+        userId: socket.userId,
+        muted
+      });
+    });
+
     // Handle errors
     socket.on('error', (error) => {
       console.error('Socket error:', error);
@@ -577,89 +660,6 @@ export const setupSocketHandlers = (io) => {
     
     socket.currentBoard = null;
   }
-
-  // WebRTC Voice Chat Handlers
-  socket.on('voice-offer', ({ targetUserId, offer, boardId }) => {
-    console.log(`🎤 Voice offer from ${socket.userId} to ${targetUserId}`);
-    const targetSocketId = userSockets.get(targetUserId);
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-offer', {
-        fromUserId: socket.userId,
-        fromUserName: socket.user.name,
-        offer,
-        boardId
-      });
-    }
-  });
-
-  socket.on('voice-answer', ({ targetUserId, answer, boardId }) => {
-    console.log(`🎤 Voice answer from ${socket.userId} to ${targetUserId}`);
-    const targetSocketId = userSockets.get(targetUserId);
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-answer', {
-        fromUserId: socket.userId,
-        answer,
-        boardId
-      });
-    }
-  });
-
-  socket.on('voice-ice-candidate', ({ targetUserId, candidate, boardId }) => {
-    console.log(`🎤 ICE candidate from ${socket.userId} to ${targetUserId}`);
-    const targetSocketId = userSockets.get(targetUserId);
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-ice-candidate', {
-        fromUserId: socket.userId,
-        candidate,
-        boardId
-      });
-    }
-  });
-
-  socket.on('voice-call-request', ({ targetUserId, boardId }) => {
-    console.log(`📞 Voice call request from ${socket.userId} to ${targetUserId}`);
-    const targetSocketId = userSockets.get(targetUserId);
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-call-request', {
-        fromUserId: socket.userId,
-        fromUserName: socket.user.name,
-        fromUserAvatar: socket.user.avatar,
-        boardId
-      });
-    }
-  });
-
-  socket.on('voice-call-response', ({ targetUserId, accepted, boardId }) => {
-    console.log(`📞 Voice call response from ${socket.userId} to ${targetUserId}: ${accepted}`);
-    const targetSocketId = userSockets.get(targetUserId);
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-call-response', {
-        fromUserId: socket.userId,
-        accepted,
-        boardId
-      });
-    }
-  });
-
-  socket.on('voice-call-end', ({ targetUserId, boardId }) => {
-    console.log(`📞 Voice call ended by ${socket.userId}`);
-    const targetSocketId = userSockets.get(targetUserId);
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-call-end', {
-        fromUserId: socket.userId,
-        boardId
-      });
-    }
-  });
-
-  socket.on('voice-mute-toggle', ({ boardId, muted }) => {
-    console.log(`🎤 ${socket.userId} ${muted ? 'muted' : 'unmuted'} microphone`);
-    const roomName = `board:${boardId}`;
-    socket.to(roomName).emit('user-voice-status', {
-      userId: socket.userId,
-      muted
-    });
-  });
 
   console.log('🔌 Socket.IO handlers initialized');
 };
