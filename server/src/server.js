@@ -11,6 +11,8 @@ import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 
 import connectDB from './config/database.js';
 import authRoutes from './routes/auth.js';
@@ -23,7 +25,6 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { initializeAIServices } from './services/aiService.js';
 import { initializePassport } from './config/passport.js';
 import passport from 'passport';
-import session from 'express-session';
 
 // Initialize AI services after environment variables are loaded
 initializeAIServices();
@@ -45,6 +46,8 @@ const allowedOrigins = [
 console.log('🔧 CORS Configuration:');
 console.log('CLIENT_URL from env:', process.env.CLIENT_URL);
 console.log('Allowed Origins:', allowedOrigins);
+console.log('📦 Session Store: MongoDB (connect-mongo)');
+console.log('🔐 Session Secret configured:', !!process.env.SESSION_SECRET);
 
 const io = new Server(server, {
   path: '/socket.io',
@@ -102,9 +105,16 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    touchAfter: 24 * 3600, // lazy session update
+    ttl: 24 * 60 * 60 // Session TTL in seconds (24 hours)
+  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production', // HTTPS in production
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 }));
 
