@@ -4,9 +4,6 @@ import { Button } from './ui/Button';
 const OAuthButtons = ({ className = '' }) => {
   const handleGoogleLogin = () => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    console.log('OAuth redirect URL:', `${apiUrl}/api/auth/google`);
-    console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
-    console.log('Current location:', window.location.href);
     window.location.href = `${apiUrl}/api/auth/google`;
   };
 
