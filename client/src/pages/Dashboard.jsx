@@ -25,7 +25,10 @@ import {
   BellIcon,
   Cog6ToothIcon,
   UserCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ClipboardDocumentIcon,
+  EnvelopeIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
@@ -36,9 +39,10 @@ const Dashboard = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ open: false, boardId: null, boardTitle: '' });
   const [analyticsModal, setAnalyticsModal] = useState({ open: false, analytics: null, boardTitle: '' });
+  const [shareModal, setShareModal] = useState({ open: false, boardId: null, boardTitle: '', shareLink: '' });
 
   const { user } = useAuthStore();
-  const { boards, loading, fetchBoards, createBoard, deleteBoard, archiveBoard, restoreBoard, getBoardAnalytics } = useBoardStore();
+  const { boards, loading, fetchBoards, createBoard, deleteBoard, archiveBoard, restoreBoard, getBoardAnalytics, duplicateBoard } = useBoardStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -146,6 +150,35 @@ const Dashboard = () => {
     const result = await getBoardAnalytics(boardId);
     if (result.success) setAnalyticsModal({ open: true, analytics: result.analytics, boardTitle });
     else toast.error(result.error);
+  };
+
+  const handleShareBoard = (boardId, boardTitle) => {
+    const shareLink = `${window.location.origin}/whiteboard/${boardId}`;
+    setShareModal({ open: true, boardId, boardTitle, shareLink });
+  };
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareModal.shareLink);
+      toast.success('Share link copied to clipboard!');
+    } catch (error) {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const shareViaEmail = () => {
+    const subject = `Join me on WhiteBoard: ${shareModal.boardTitle}`;
+    const body = `I'd like to invite you to collaborate on my whiteboard "${shareModal.boardTitle}".\n\nClick the link below to join:\n${shareModal.shareLink}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
+  const handleDuplicateBoard = async (boardId, boardTitle) => {
+    const result = await duplicateBoard(boardId);
+    if (result.success) {
+      toast.success(`Board "${boardTitle}" duplicated successfully!`);
+    } else {
+      toast.error(result.error || 'Failed to duplicate board');
+    }
   };
 
   if (loading && boards.length === 0) {
@@ -321,6 +354,7 @@ const Dashboard = () => {
                     <div className="flex space-x-1">
                       <button
                         title="Share"
+                        onClick={() => handleShareBoard(board._id, board.title)}
                         className="p-2 rounded-lg hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-all duration-200"
                       >
                         <ShareIcon className="w-4 h-4" />
@@ -328,6 +362,7 @@ const Dashboard = () => {
                       
                       <button
                         title="Duplicate"
+                        onClick={() => handleDuplicateBoard(board._id, board.title)}
                         className="p-2 rounded-lg hover:bg-green-50 text-gray-500 hover:text-green-600 transition-all duration-200"
                       >
                         <DocumentDuplicateIcon className="w-4 h-4" />
@@ -516,6 +551,95 @@ const Dashboard = () => {
                 )}
                 <div className="mt-6 text-center">
                   <Button onClick={() => setAnalyticsModal({ open: false, analytics: null, boardTitle: '' })} className="bg-gradient-to-r from-yellow-600 to-purple-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">Close</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Share Modal */}
+        {shareModal.open && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+              <CardHeader className="text-center pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Share Board
+                  </CardTitle>
+                  <button
+                    onClick={() => setShareModal({ open: false, boardId: null, boardTitle: '', shareLink: '' })}
+                    className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+                <CardDescription className="text-gray-600 mt-2">
+                  Share "{shareModal.boardTitle}" with others
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Share Link */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700">Share Link</label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      value={shareModal.shareLink}
+                      readOnly
+                      className="flex-1 bg-gray-50 border-gray-200"
+                    />
+                    <Button
+                      onClick={copyShareLink}
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                    >
+                      <ClipboardDocumentIcon className="w-4 h-4 mr-2" />
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500">Anyone with this link can view and collaborate on the board</p>
+                </div>
+
+                {/* Share Options */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-700">Share via</h3>
+                  
+                  <Button
+                    onClick={shareViaEmail}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
+                    <EnvelopeIcon className="w-4 h-4 mr-3" />
+                    Email
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: `WhiteBoard: ${shareModal.boardTitle}`,
+                          text: `Check out this collaborative whiteboard: ${shareModal.boardTitle}`,
+                          url: shareModal.shareLink
+                        });
+                      } else {
+                        copyShareLink();
+                      }
+                    }}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
+                    <ShareIcon className="w-4 h-4 mr-3" />
+                    More Options
+                  </Button>
+                </div>
+
+                <div className="mt-6 text-center">
+                  <Button 
+                    onClick={() => setShareModal({ open: false, boardId: null, boardTitle: '', shareLink: '' })} 
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Done
+                  </Button>
                 </div>
               </CardContent>
             </Card>

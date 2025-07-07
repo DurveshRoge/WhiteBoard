@@ -253,6 +253,31 @@ export const useBoardStore = create((set, get) => ({
     }
   },
 
+  // Duplicate a board
+  duplicateBoard: async (boardId) => {
+    try {
+      set({ loading: true, error: null });
+      
+      const response = await axios.post(`/api/boards/${boardId}/duplicate`);
+      const duplicatedBoard = response.data.data || response.data;
+      
+      set((state) => ({
+        boards: [duplicatedBoard, ...state.boards],
+        loading: false,
+        error: null
+      }));
+      
+      return { success: true, board: duplicatedBoard };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to duplicate board';
+      set({ 
+        loading: false, 
+        error: errorMessage 
+      });
+      return { success: false, error: errorMessage };
+    }
+  },
+
   // Share a board with users
   shareBoard: async (boardId, emails, permission = 'edit') => {
     try {
