@@ -21,8 +21,14 @@ const handleOAuthSuccess = (req, res) => {
     req.user.lastLogin = new Date();
     req.user.save();
     
+    // Determine the correct frontend URL
+    const frontendURL = process.env.CLIENT_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://whiteboard-gray-rho.vercel.app'
+        : 'http://localhost:3000');
+    
     // Redirect to frontend with token
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
+    res.redirect(`${frontendURL}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
       id: req.user._id,
       name: req.user.name,
       email: req.user.email,
@@ -30,7 +36,13 @@ const handleOAuthSuccess = (req, res) => {
       role: req.user.role
     }))}`);
   } else {
-    res.redirect(`${process.env.CLIENT_URL}/login?error=oauth_failed`);
+    // Determine the correct frontend URL for error redirect
+    const frontendURL = process.env.CLIENT_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://whiteboard-gray-rho.vercel.app'
+        : 'http://localhost:3000');
+        
+    res.redirect(`${frontendURL}/login?error=oauth_failed`);
   }
 };
 
