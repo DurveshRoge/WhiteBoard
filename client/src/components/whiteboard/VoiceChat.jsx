@@ -30,6 +30,7 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     if (!socket || !isVoiceChatOpen) return;
 
     // Request microphone access
+    console.log('Requesting microphone access...');
     navigator.mediaDevices.getUserMedia({ 
       audio: {
         echoCancellation: true,
@@ -39,17 +40,35 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
       }, 
       video: false 
     }).then(stream => {
+      console.log('Microphone access granted');
+      console.log('Local stream tracks:', stream.getTracks().length);
+      console.log('Audio tracks:', stream.getAudioTracks().length);
+      
       setLocalStream(stream);
       streamRef.current = stream;
+      
+      // Test local audio
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        console.log('Audio track settings:', audioTrack.getSettings());
+        console.log('Audio track enabled:', audioTrack.enabled);
+      }
       
       // Set up voice activity detection
       setupVoiceActivityDetection(stream);
       
       // Join voice chat room
+      console.log('Joining voice chat room for board:', boardId);
       socket.emit('join-voice-chat', { boardId });
     }).catch(err => {
       console.error('Error accessing microphone:', err);
-      toast.error('Could not access microphone. Please check permissions.');
+      if (err.name === 'NotAllowedError') {
+        toast.error('Microphone access denied. Please allow microphone access and try again.');
+      } else if (err.name === 'NotFoundError') {
+        toast.error('No microphone found. Please connect a microphone and try again.');
+      } else {
+        toast.error('Could not access microphone. Please check permissions and try again.');
+      }
     });
 
     // Socket event listeners
@@ -137,11 +156,11 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     console.log('Joined voice chat:', data);
     setIsInCall(true);
     
-    // Create peers for existing users
+    // Create peers for existing users - we are the initiator for existing users
     if (data.peers && data.peers.length > 0) {
       data.peers.forEach(peerData => {
         console.log('Creating peer for existing user:', peerData.userId);
-        createPeer(peerData.userId, false); // We initiate the call
+        createPeer(peerData.userId, true); // We initiate to existing users
       });
     }
   };
@@ -149,7 +168,7 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
   const handleUserJoinedVoice = (data) => {
     console.log('User joined voice chat:', data);
     setVoiceUsers(prev => new Set(prev.add(data.userId)));
-    // Don't create peer here - let the new user initiate
+    // Don't create peer here - the new user will initiate to us
   };
 
   const handleUserLeftVoice = (data) => {
@@ -182,27 +201,41 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
 
     const peer = new Peer({
       initiator,
-      trickle: false,
+      trickle: true, // Enable trickle ICE for better connectivity
       stream: streamRef.current,
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' }
+        ],
+        iceCandidatePoolSize: 10
       }
     });
 
     peer.on('signal', (signal) => {
-      console.log('Sending signal to user:', userId, signal.type);
-      socket.emit('voice-signal', { 
-        boardId, 
-        userId, 
-        signal 
-      });
+      console.log('Sending signal to user:', userId, signal.type || 'ice-candidate');
+      if (signal.type === 'offer' || signal.type === 'answer') {
+        socket.emit('voice-signal', { 
+          boardId, 
+          userId, 
+          signal 
+        });
+      } else {
+        // ICE candidate
+        socket.emit('voice-ice-candidate', { 
+          boardId, 
+          userId, 
+          candidate: signal 
+        });
+      }
     });
 
     peer.on('stream', (remoteStream) => {
       console.log('Received remote stream from user:', userId);
+      console.log('Remote stream tracks:', remoteStream.getTracks().length);
+      console.log('Audio tracks:', remoteStream.getAudioTracks().length);
       
       // Create audio element for remote stream
       const audio = document.createElement('audio');
@@ -210,6 +243,27 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
       audio.autoplay = true;
       audio.volume = isDeafened ? 0 : 1;
       audio.style.display = 'none';
+      audio.controls = false;
+      
+      // Try to play immediately and handle any errors
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Successfully playing audio from user:', userId);
+          })
+          .catch(err => {
+            console.error('Error playing remote audio:', err);
+            // Try clicking to enable audio on user interaction
+            const enableAudio = () => {
+              audio.play().then(() => {
+                console.log('Audio enabled after user interaction');
+                document.removeEventListener('click', enableAudio);
+              }).catch(console.error);
+            };
+            document.addEventListener('click', enableAudio, { once: true });
+          });
+      }
       
       // Add to document to ensure it plays
       document.body.appendChild(audio);
@@ -217,20 +271,26 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
       // Store reference
       peerRefs.current.set(userId, { peer, audio });
       setVoiceUsers(prev => new Set(prev.add(userId)));
-      
-      // Play the audio
-      audio.play().catch(err => {
-        console.error('Error playing remote audio:', err);
-      });
     });
 
     peer.on('connect', () => {
       console.log('Peer connected:', userId);
+      toast.success(`Connected to ${userId}`);
+    });
+
+    peer.on('data', (data) => {
+      console.log('Received data from peer:', userId, data);
     });
 
     peer.on('error', (err) => {
       console.error('Peer error with user', userId, ':', err);
-      removePeer(userId);
+      toast.error(`Connection error with user ${userId}`);
+      // Try to reconnect after a short delay
+      setTimeout(() => {
+        console.log('Attempting to reconnect to user:', userId);
+        removePeer(userId);
+        createPeer(userId, true); // Try as initiator on reconnect
+      }, 2000);
     });
 
     peer.on('close', () => {
@@ -276,14 +336,37 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     
     if (!peer) {
       // If we don't have a peer yet, create one as non-initiator
+      console.log('Creating new peer as non-initiator for:', data.userId);
       peer = createPeer(data.userId, false);
-    }
-    
-    if (peer && data.signal) {
+      
+      // Wait a bit for peer to be ready, then signal
+      if (peer && data.signal) {
+        setTimeout(() => {
+          try {
+            peer.signal(data.signal);
+          } catch (error) {
+            console.error('Error handling delayed signal:', error);
+          }
+        }, 100);
+      }
+    } else if (data.signal) {
       try {
         peer.signal(data.signal);
       } catch (error) {
         console.error('Error handling signal:', error);
+        // If signal fails, try recreating the peer
+        console.log('Recreating peer due to signal error');
+        removePeer(data.userId);
+        peer = createPeer(data.userId, false);
+        if (peer) {
+          setTimeout(() => {
+            try {
+              peer.signal(data.signal);
+            } catch (retryError) {
+              console.error('Error handling signal on retry:', retryError);
+            }
+          }, 100);
+        }
       }
     }
   };
@@ -293,10 +376,13 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
     const peer = peers.get(data.userId);
     if (peer && data.candidate) {
       try {
+        console.log('Adding ICE candidate to peer:', data.userId);
         peer.signal(data.candidate);
       } catch (error) {
         console.error('Error handling ICE candidate:', error);
       }
+    } else {
+      console.warn('No peer found for ICE candidate from user:', data.userId);
     }
   };
 
