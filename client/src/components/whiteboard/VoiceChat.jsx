@@ -19,6 +19,8 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
   const [localStream, setLocalStream] = useState(null);
   const [speakingUsers, setSpeakingUsers] = useState(new Set());
   const [voiceUsers, setVoiceUsers] = useState(new Set());
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
   
   const localVideoRef = useRef();
   const peerRefs = useRef(new Map());
@@ -60,6 +62,7 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
       // Join voice chat room
       console.log('Joining voice chat room for board:', boardId);
       socket.emit('join-voice-chat', { boardId });
+      setConnectionStatus('connecting');
     }).catch(err => {
       console.error('Error accessing microphone:', err);
       if (err.name === 'NotAllowedError') {
@@ -155,6 +158,7 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
   const handleVoiceChatJoined = (data) => {
     console.log('Joined voice chat:', data);
     setIsInCall(true);
+    setConnectionStatus('connected');
     
     // Create peers for existing users - we are the initiator for existing users
     if (data.peers && data.peers.length > 0) {
@@ -162,6 +166,8 @@ const VoiceChat = ({ socket, boardId, user, activeUsers, isVoiceChatOpen, setIsV
         console.log('Creating peer for existing user:', peerData.userId);
         createPeer(peerData.userId, true); // We initiate to existing users
       });
+    } else {
+      console.log('No existing peers in voice chat');
     }
   };
 

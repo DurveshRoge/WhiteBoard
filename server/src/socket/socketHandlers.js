@@ -382,22 +382,28 @@ export const setupSocketHandlers = (io) => {
     socket.on('voice-signal', (data) => {
       const { boardId, userId, signal } = data;
       if (boardId && userId) {
-        const roomName = `voice:${boardId}`;
-        socket.to(roomName).emit('voice-signal', {
-          userId: socket.userId,
-          signal
-        });
+        // Send signal directly to the target user
+        const targetSocketId = userSockets.get(userId);
+        if (targetSocketId) {
+          io.to(targetSocketId).emit('voice-signal', {
+            userId: socket.userId, // sender's userId
+            signal
+          });
+        }
       }
     });
 
     socket.on('voice-ice-candidate', (data) => {
       const { boardId, userId, candidate } = data;
       if (boardId && userId) {
-        const roomName = `voice:${boardId}`;
-        socket.to(roomName).emit('voice-ice-candidate', {
-          userId: socket.userId,
-          candidate
-        });
+        // Send ICE candidate directly to the target user
+        const targetSocketId = userSockets.get(userId);
+        if (targetSocketId) {
+          io.to(targetSocketId).emit('voice-ice-candidate', {
+            userId: socket.userId, // sender's userId
+            candidate
+          });
+        }
       }
     });
 
@@ -563,18 +569,6 @@ export const setupSocketHandlers = (io) => {
         io.to(targetSocketId).emit('voice-answer', {
           fromUserId: socket.userId,
           answer,
-          boardId
-        });
-      }
-    });
-
-    socket.on('voice-ice-candidate', ({ targetUserId, candidate, boardId }) => {
-      console.log(`🎤 ICE candidate from ${socket.userId} to ${targetUserId}`);
-      const targetSocketId = userSockets.get(targetUserId);
-      if (targetSocketId) {
-        io.to(targetSocketId).emit('voice-ice-candidate', {
-          fromUserId: socket.userId,
-          candidate,
           boardId
         });
       }
