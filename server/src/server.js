@@ -35,14 +35,21 @@ const app = express();
 const server = createServer(app);
 
 // Initialize Socket.IO
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "https://whiteboard-gray-rho.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173"
+].filter(Boolean); // Remove any undefined values
+
+console.log('🔧 CORS Configuration:');
+console.log('CLIENT_URL from env:', process.env.CLIENT_URL);
+console.log('Allowed Origins:', allowedOrigins);
+
 const io = new Server(server, {
   path: '/socket.io',
   cors: {
-    origin: [
-      process.env.CLIENT_URL || "http://localhost:3000",
-      "https://whiteboard-gray-rho.vercel.app",
-      "http://localhost:3000"
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Authorization", "Content-Type"],
@@ -106,14 +113,24 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(cors({
-  origin: [
-    process.env.CLIENT_URL || "http://localhost:3000",
-    "https://whiteboard-gray-rho.vercel.app",
-    "http://localhost:3000"
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    console.log('🌐 CORS Request from origin:', origin);
+    
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS Allowed for:', origin);
+      return callback(null, true);
+    } else {
+      console.log('❌ CORS Blocked for:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Access-Control-Allow-Origin']
 }));
 
 // Handle OPTIONS preflight requests explicitly
@@ -189,11 +206,7 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
-  console.log(`🌐 Allowed CORS Origins:`, [
-    process.env.CLIENT_URL || "http://localhost:3000",
-    "https://whiteboard-gray-rho.vercel.app",
-    "http://localhost:3000"
-  ]);
+  console.log(`🌐 Allowed CORS Origins:`, allowedOrigins);
   console.log(`⚡ Socket.IO enabled`);
 });
 
