@@ -9,7 +9,7 @@ import OAuthButtons from '../components/OAuthButtons';
 import { 
   EyeIcon, 
   EyeSlashIcon, 
-  SparklesIcon,
+  PaintBrushIcon,
   ArrowRightIcon,
   CheckCircleIcon,
   UsersIcon,
@@ -71,9 +71,9 @@ const RegisterPage = () => {
 
   const benefits = [
     {
-      icon: SparklesIcon,
-      title: 'AI-Powered Tools',
-      description: 'Smart suggestions and automated workflows to boost productivity'
+      icon: PaintBrushIcon,
+      title: 'Creative Freedom',
+      description: 'Unlimited canvas space to bring your ideas to life'
     },
     {
       icon: UsersIcon,
@@ -108,15 +108,15 @@ const RegisterPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-blue-50 flex">
       {/* Left Side - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className={`text-center mb-8 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <Link to="/" className="inline-flex items-center space-x-3 group">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
-                <span className="text-white font-bold text-xl">W</span>
+              <div className="w-12 h-12 bg-gradient-to-r from-brand-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+                <PaintBrushIcon className="w-6 h-6 text-white" />
               </div>
               <span className="font-bold text-3xl text-gray-900">WhiteBoard</span>
             </Link>
@@ -124,7 +124,7 @@ const RegisterPage = () => {
 
           <Card className={`shadow-2xl border-0 bg-white/80 backdrop-blur-sm transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <CardHeader className="space-y-1 text-center pb-6">
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent">
                 Create your account
               </CardTitle>
               <CardDescription className="text-lg text-gray-600">
@@ -146,7 +146,7 @@ const RegisterPage = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                   />
                 </div>
 
@@ -162,7 +162,7 @@ const RegisterPage = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                   />
                 </div>
 
@@ -179,7 +179,7 @@ const RegisterPage = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                     />
                     <button
                       type="button"
@@ -208,7 +208,7 @@ const RegisterPage = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
-                      className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                     />
                     <button
                       type="button"
@@ -230,15 +230,15 @@ const RegisterPage = () => {
                     name="terms"
                     type="checkbox"
                     required
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                    className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded mt-1"
                   />
                   <label htmlFor="terms" className="text-sm text-gray-700 leading-relaxed">
                     I agree to the{' '}
-                    <a href="#" className="text-blue-600 hover:text-blue-500 font-semibold transition-colors">
+                    <a href="#" className="text-brand-600 hover:text-brand-500 font-semibold transition-colors">
                       Terms of Service
                     </a>{' '}
                     and{' '}
-                    <a href="#" className="text-blue-600 hover:text-blue-500 font-semibold transition-colors">
+                    <a href="#" className="text-brand-600 hover:text-brand-500 font-semibold transition-colors">
                       Privacy Policy
                     </a>
                   </label>
@@ -246,7 +246,7 @@ const RegisterPage = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="w-full h-12 bg-gradient-to-r from-brand-600 to-blue-600 hover:from-brand-700 hover:to-blue-700 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -279,7 +279,7 @@ const RegisterPage = () => {
               <div className="text-center pt-4">
                 <span className="text-gray-600">
                   Already have an account?{' '}
-                  <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+                  <Link to="/login" className="font-semibold text-brand-600 hover:text-brand-500 transition-colors">
                     Sign in
                   </Link>
                 </span>
@@ -290,7 +290,7 @@ const RegisterPage = () => {
       </div>
 
       {/* Right Side - Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-purple-600 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-600 to-blue-600 relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0">
           <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
@@ -304,7 +304,7 @@ const RegisterPage = () => {
               <h2 className="text-4xl font-bold mb-6">
                 Join thousands of teams
               </h2>
-              <p className="text-xl text-blue-100 mb-12 leading-relaxed">
+              <p className="text-xl text-brand-100 mb-12 leading-relaxed">
                 Start your collaborative journey with WhiteBoard and experience the power of real-time teamwork.
               </p>
 
@@ -323,7 +323,7 @@ const RegisterPage = () => {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-white mb-1">{benefit.title}</h3>
-                        <p className="text-blue-100">{benefit.description}</p>
+                        <p className="text-brand-100">{benefit.description}</p>
                       </div>
                     </div>
                   );
@@ -345,7 +345,7 @@ const RegisterPage = () => {
                         <StarIcon key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                       ))}
                     </div>
-                    <p className="text-blue-100 text-sm mb-2">"{testimonial.content}"</p>
+                    <p className="text-brand-100 text-sm mb-2">"{testimonial.content}"</p>
                     <div className="text-white/80 text-sm font-medium">
                       {testimonial.name}, {testimonial.role}
                     </div>
@@ -358,11 +358,11 @@ const RegisterPage = () => {
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center space-x-2">
                     <CheckCircleIcon className="w-4 h-4 text-green-400" />
-                    <span className="text-blue-100 text-sm">Free forever plan</span>
+                    <span className="text-brand-100 text-sm">Free forever plan</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <CheckCircleIcon className="w-4 h-4 text-green-400" />
-                    <span className="text-blue-100 text-sm">No credit card required</span>
+                    <span className="text-brand-100 text-sm">No credit card required</span>
                   </div>
                 </div>
               </div>

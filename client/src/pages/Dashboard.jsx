@@ -183,7 +183,7 @@ const Dashboard = () => {
 
   if (loading && boards.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-brand-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your whiteboards...</p>
@@ -193,7 +193,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-brand-50">
       {/* Header removed: Navigation is now only global */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -212,7 +212,7 @@ const Dashboard = () => {
             <div className="mt-4 sm:mt-0">
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+                className="bg-gradient-to-r from-brand-600 to-blue-600 hover:from-brand-700 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
               >
                 <PlusIcon className="w-5 h-5 mr-2" />
                 New Whiteboard
@@ -224,31 +224,31 @@ const Dashboard = () => {
         {/* Stats Cards */}
         <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {/* Total Boards Card */}
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+          <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white border-0 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm font-medium">Total Boards</p>
+                  <p className="text-brand-100 text-sm font-medium">Total Boards</p>
                   <p className="text-3xl font-bold">{boards?.length || 0}</p>
                 </div>
-                <FolderIcon className="w-8 h-8 text-blue-200" />
+                <FolderIcon className="w-8 h-8 text-brand-200" />
               </div>
             </CardContent>
           </Card>
 
           {/* Active Collaborators Card */}
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
+          <Card className="bg-gradient-to-br from-blue-500 to-brand-600 text-white border-0 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium">Active Collaborators</p>
+                  <p className="text-blue-100 text-sm font-medium">Active Collaborators</p>
                   <p className="text-3xl font-bold">{
                     Array.isArray(boards) && boards.length > 0
                       ? Array.from(new Set(boards.flatMap(b => (b.collaborators || []).map(c => c.user?._id || c.user)))).length
                       : 0
                   }</p>
                 </div>
-                <UsersIcon className="w-8 h-8 text-purple-200" />
+                <UsersIcon className="w-8 h-8 text-blue-200" />
               </div>
             </CardContent>
           </Card>
@@ -271,7 +271,7 @@ const Dashboard = () => {
         {/* Boards Grid */}
         {filteredBoards.length === 0 ? (
           <div className={`text-center py-16 transition-all duration-1000 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="w-32 h-32 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <div className="w-32 h-32 bg-gradient-to-r from-blue-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
               <PencilIcon className="w-16 h-16 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -286,7 +286,7 @@ const Dashboard = () => {
             {!searchQuery && (
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-700 hover:to-brand-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
               >
                 <PlusIcon className="w-5 h-5 mr-2" />
                 Create Your First Whiteboard
@@ -325,9 +325,9 @@ const Dashboard = () => {
                 <CardContent className="pt-0">
                   {/* Board Preview */}
                   <Link to={`/whiteboard/${board._id}`}>
-                    <div className="w-full h-40 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 transition-all duration-300 flex items-center justify-center mb-4 cursor-pointer group-hover:shadow-lg">
+                    <div className="w-full h-40 bg-gradient-to-br from-blue-50 via-brand-50 to-blue-100 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 transition-all duration-300 flex items-center justify-center mb-4 cursor-pointer group-hover:shadow-lg">
                       <div className="text-center">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
                           <PencilIcon className="w-6 h-6 text-white" />
                         </div>
                         <p className="text-sm text-gray-500 font-medium">Click to open</p>
@@ -422,7 +422,7 @@ const Dashboard = () => {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
               <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-brand-600 bg-clip-text text-transparent">
                   Create New Whiteboard
                 </CardTitle>
                 <CardDescription className="text-gray-600">
@@ -476,7 +476,7 @@ const Dashboard = () => {
                     <Button
                       type="submit"
                       disabled={isCreating}
-                      className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+                      className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-700 hover:to-brand-700 text-white font-semibold"
                     >
                       {isCreating ? (
                         <div className="flex items-center">
@@ -531,7 +531,7 @@ const Dashboard = () => {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
               <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-purple-600 bg-clip-text text-transparent">
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-brand-600 bg-clip-text text-transparent">
                   Analytics for {analyticsModal.boardTitle}
                 </CardTitle>
               </CardHeader>
@@ -550,7 +550,7 @@ const Dashboard = () => {
                   <div>Loading analytics...</div>
                 )}
                 <div className="mt-6 text-center">
-                  <Button onClick={() => setAnalyticsModal({ open: false, analytics: null, boardTitle: '' })} className="bg-gradient-to-r from-yellow-600 to-purple-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">Close</Button>
+                  <Button onClick={() => setAnalyticsModal({ open: false, analytics: null, boardTitle: '' })} className="bg-gradient-to-r from-yellow-600 to-brand-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">Close</Button>
                 </div>
               </CardContent>
             </Card>
@@ -563,7 +563,7 @@ const Dashboard = () => {
             <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
               <CardHeader className="text-center pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-brand-600 bg-clip-text text-transparent">
                     Share Board
                   </CardTitle>
                   <button
@@ -636,7 +636,7 @@ const Dashboard = () => {
                 <div className="mt-6 text-center">
                   <Button 
                     onClick={() => setShareModal({ open: false, boardId: null, boardTitle: '', shareLink: '' })} 
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="bg-gradient-to-r from-blue-600 to-brand-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Done
                   </Button>

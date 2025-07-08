@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { 
   PencilIcon, 
   UsersIcon, 
@@ -12,110 +19,157 @@ import {
   ShieldCheckIcon,
   DevicePhoneMobileIcon,
   GlobeAltIcon,
-  StarIcon
+  StarIcon,
+  PlayIcon,
+  RocketLaunchIcon,
+  HeartIcon,
+  ChatBubbleLeftRightIcon,
+  PaintBrushIcon,
+  LightBulbIcon,
+  ClockIcon,
+  CursorArrowRaysIcon,
+  UserGroupIcon,
+  BookOpenIcon,
+  LifebuoyIcon,
+  CodeBracketIcon
 } from '@heroicons/react/24/outline';
 
 const LandingPage = () => {
   const [currentFeature, setCurrentFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   useEffect(() => {
     setIsVisible(true);
     const interval = setInterval(() => {
       setCurrentFeature((prev) => (prev + 1) % features.length);
-    }, 3000);
-    return () => clearInterval(interval);
+    }, 4000);
+    
+    const testimonialInterval = setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 6000);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(testimonialInterval);
+    };
   }, []);
 
   const features = [
     {
-      icon: PencilIcon,
+      icon: PaintBrushIcon,
       title: 'Intuitive Drawing Tools',
-      description: 'Professional drawing tools with smooth performance and precise control.',
-      color: 'from-blue-500 to-cyan-500'
+      description: 'Professional-grade drawing tools with smooth performance, pressure sensitivity, and precise control for every creative need.',
+      color: 'from-blue-500 to-cyan-500',
+      benefits: ['Pressure-sensitive pen support', 'Vector & raster drawing modes', '50+ brush presets']
     },
     {
       icon: UsersIcon,
       title: 'Real-time Collaboration',
-      description: 'Work together with your team in real-time, no matter where you are.',
-      color: 'from-purple-500 to-pink-500'
+      description: 'Work together seamlessly with your team in real-time. See cursors, edits, and changes as they happen.',
+      color: 'from-brand-500 to-blue-500',
+      benefits: ['Live cursor tracking', 'Voice & video chat', 'Unlimited team members']
     },
     {
       icon: CloudIcon,
-      title: 'Cloud Sync',
-      description: 'Your work is automatically saved and synced across all your devices.',
-      color: 'from-green-500 to-emerald-500'
+      title: 'Cloud Sync & Storage',
+      description: 'Your work is automatically saved and synced across all your devices with enterprise-grade security.',
+      color: 'from-green-500 to-emerald-500',
+      benefits: ['Auto-save every 30 seconds', 'Version history', '99.9% uptime SLA']
     },
     {
-      icon: BoltIcon,
-      title: 'Lightning Fast',
-      description: 'Built for speed and performance with modern web technologies.',
-      color: 'from-orange-500 to-red-500'
+      icon: LightBulbIcon,
+      title: 'Smart Templates',
+      description: 'Start faster with intelligent templates for brainstorming, planning, design, and collaboration workflows.',
+      color: 'from-orange-500 to-red-500',
+      benefits: ['100+ ready templates', 'AI-powered suggestions', 'Custom template creation']
     }
-  ];
-
-  const pricingFeatures = [
-    'Unlimited whiteboards',
-    'Real-time collaboration',
-    'Cloud storage',
-    'Export to multiple formats',
-    'Team management',
-    'Priority support',
-    'Advanced analytics',
-    'Custom branding'
   ];
 
   const testimonials = [
     {
       name: 'Sarah Johnson',
       role: 'Product Manager',
-      company: 'TechCorp',
-      content: 'WhiteBoard has transformed how our team collaborates. The real-time features are incredible!',
+      company: 'TechFlow',
+      content: 'WhiteBoard has revolutionized how our distributed team collaborates. The real-time features feel magical!',
       avatar: 'SJ',
-      rating: 5
+      rating: 5,
+      bgColor: 'bg-gradient-to-br from-pink-500 to-rose-500'
     },
     {
       name: 'Mike Chen',
       role: 'Design Lead',
-      company: 'Creative Studio',
-      content: 'The drawing tools are so smooth and intuitive. It feels like working on paper but better.',
+      company: 'CreativeStudio',
+      content: 'The drawing tools are incredibly smooth and intuitive. It feels like working on paper but with superpowers.',
       avatar: 'MC',
-      rating: 5
+      rating: 5,
+      bgColor: 'bg-gradient-to-br from-blue-500 to-cyan-500'
     },
     {
       name: 'Emily Rodriguez',
       role: 'Team Lead',
-      company: 'StartupXYZ',
-      content: 'Perfect for remote teams. We use it for everything from brainstorming to project planning.',
+      company: 'InnovateCorp',
+      content: 'Perfect for remote brainstorming sessions. We use it for everything from wireframes to strategy planning.',
       avatar: 'ER',
-      rating: 5
+      rating: 5,
+      bgColor: 'bg-gradient-to-br from-blue-500 to-brand-500'
     }
   ];
 
   const stats = [
-    { number: '10K+', label: 'Active Users' },
-    { number: '50K+', label: 'Whiteboards Created' },
-    { number: '99.9%', label: 'Uptime' },
-    { number: '24/7', label: 'Support' }
+    { number: '50K+', label: 'Active Users', icon: UsersIcon },
+    { number: '2M+', label: 'Whiteboards Created', icon: PencilIcon },
+    { number: '99.9%', label: 'Uptime', icon: ClockIcon },
+    { number: '150+', label: 'Countries', icon: GlobeAltIcon }
+  ];
+
+  const useCases = [
+    {
+      title: 'Design & Prototyping',
+      description: 'Create wireframes, mockups, and design systems',
+      icon: PaintBrushIcon,
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Brainstorming',
+      description: 'Ideate and collaborate on new concepts',
+      icon: LightBulbIcon,
+      color: 'bg-yellow-500'
+    },
+    {
+      title: 'Project Planning',
+      description: 'Map out workflows and project timelines',
+      icon: ChartBarIcon,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Team Meetings',
+      description: 'Visual collaboration during remote meetings',
+      icon: UserGroupIcon,
+      color: 'bg-brand-500'
+    }
   ];
 
   return (
     <div className="min-h-screen bg-white overflow-hidden">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">W</span>
+            <motion.div 
+              className="flex items-center space-x-2"
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-brand-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                <PaintBrushIcon className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-gray-900">WhiteBoard</span>
-            </div>
+              <span className="font-heading font-bold text-xl text-gray-900">WhiteBoard</span>
+            </motion.div>
             
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Pricing</a>
-              <a href="#testimonials" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">Reviews</a>
+              <a href="#features" className="text-gray-600 hover:text-brand-600 font-medium transition-colors">Features</a>
+              <a href="#solutions" className="text-gray-600 hover:text-brand-600 font-medium transition-colors">Solutions</a>
+              <a href="#testimonials" className="text-gray-600 hover:text-brand-600 font-medium transition-colors">Reviews</a>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -125,360 +179,886 @@ const LandingPage = () => {
               >
                 Sign In
               </Link>
-              <Link
-                to="/register"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Get Started
-              </Link>
+              <Button asChild>
+                <Link to="/register">
+                  Get Started Free
+                  <ArrowRightIcon className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
-        {/* Background Elements */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-brand-50 via-white to-blue-50">
+        {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-brand-400/30 to-blue-400/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/30 to-brand-400/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-brand-300/20 to-blue-300/20 rounded-full blur-3xl animate-pulse delay-500"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center">
-            <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-6">
-                <SparklesIcon className="w-4 h-4 mr-2" />
-                Now with AI-powered features
-              </div>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-left"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <Badge variant="secondary" className="mb-6 px-4 py-2">
+                  <SparklesIcon className="w-4 h-4 mr-2" />
+                  Trusted by 50,000+ creative teams worldwide
+                </Badge>
+              </motion.div>
               
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-                Collaborate on a
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"> Digital Canvas</span>
-              </h1>
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
+              >
+                Where Ideas
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-blue-600 to-brand-700">
+                  Come to Life
+                </span>
+              </motion.h1>
               
-              <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-                The most intuitive collaborative whiteboard for teams. Draw, brainstorm, and create together in real-time from anywhere in the world.
-              </p>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className="text-xl text-gray-600 mb-8 max-w-2xl leading-relaxed"
+              >
+                Transform your team's creativity with our intuitive collaborative whiteboard. Draw, brainstorm, and innovate together in real-time, no matter where you are.
+              </motion.p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                <Link
-                  to="/register"
-                  className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center"
-                >
-                  Start Creating Free
-                  <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-semibold text-lg transform hover:-translate-y-1"
-                >
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-4 mb-8"
+              >
+                <Button asChild size="lg" className="text-lg">
+                  <Link to="/register">
+                    Start Creating Free
+                    <ArrowRightIcon className="w-5 h-5 ml-2" />
+                  </Link>
+                </Button>
+                <Button variant="outline" size="lg" className="text-lg">
+                  <PlayIcon className="w-5 h-5 mr-2" />
                   Watch Demo
-                </Link>
-              </div>
-            </div>
+                </Button>
+              </motion.div>
 
-            {/* Hero Image */}
-            <div className={`transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <div className="relative">
-                <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-200 max-w-4xl mx-auto">
-                  <div className="bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-2xl h-96 flex items-center justify-center relative overflow-hidden">
-                    {/* Animated background elements */}
-                    <div className="absolute inset-0">
-                      <div className="absolute top-10 left-10 w-20 h-20 bg-blue-400/20 rounded-full animate-pulse"></div>
-                      <div className="absolute bottom-10 right-10 w-16 h-16 bg-purple-400/20 rounded-full animate-pulse delay-1000"></div>
-                      <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-pink-400/20 rounded-full animate-pulse delay-500"></div>
-                    </div>
-                    
-                    <div className="text-center relative z-10">
-                      <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                        <PencilIcon className="w-12 h-12 text-white" />
+              {/* Social Proof */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="flex items-center space-x-6 text-sm text-gray-500"
+              >
+                <div className="flex items-center">
+                  <div className="flex -space-x-2">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="w-8 h-8 bg-gradient-to-r from-brand-400 to-blue-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold">
+                        {String.fromCharCode(64 + i)}
                       </div>
-                      <p className="text-gray-700 text-xl font-medium">Interactive Whiteboard Preview</p>
-                      <p className="text-gray-500 text-sm mt-2">Experience the power of real-time collaboration</p>
-                    </div>
+                    ))}
                   </div>
+                  <span className="ml-3">Join 50,000+ creators</span>
                 </div>
-              </div>
-            </div>
+                <div className="flex items-center">
+                  <div className="flex text-yellow-400">
+                    {[1,2,3,4,5].map(i => (
+                      <StarIcon key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
+                  <span className="ml-2">4.9/5 rating</span>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Right Column - Interactive Preview */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="relative"
+            >
+              <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl p-8 hover:shadow-3xl transition-all duration-500">
+                {/* Mock Whiteboard */}
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl h-96 relative overflow-hidden border border-gray-200">
+                  {/* Grid Background */}
+                  <div className="absolute inset-0 opacity-30" style={{
+                    backgroundImage: `
+                      linear-gradient(rgb(156 163 175 / 0.3) 1px, transparent 1px),
+                      linear-gradient(90deg, rgb(156 163 175 / 0.3) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '20px 20px'
+                  }}></div>
+                  
+                  {/* Animated Drawing Elements */}
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.05, 1],
+                      rotate: [0, 2, 0]
+                    }}
+                    transition={{ 
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="absolute top-8 left-8 w-24 h-16 bg-gradient-to-r from-brand-400 to-blue-400 rounded-lg opacity-80 shadow-lg"
+                  />
+                  
+                  <motion.div
+                    animate={{ 
+                      y: [0, -10, 0],
+                      opacity: [0.7, 1, 0.7]
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      repeat: Infinity,
+                      delay: 1
+                    }}
+                    className="absolute top-16 right-12 w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full opacity-70 shadow-lg"
+                  />
+                  
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.1, 1],
+                      x: [0, 5, 0]
+                    }}
+                    transition={{ 
+                      duration: 5,
+                      repeat: Infinity,
+                      delay: 2
+                    }}
+                    className="absolute bottom-8 left-12 w-32 h-8 bg-gradient-to-r from-green-400 to-blue-400 rounded-full opacity-80 shadow-lg"
+                  />
+
+                  {/* User Cursors */}
+                  <motion.div
+                    animate={{ x: [50, 200, 100, 50], y: [100, 80, 150, 100] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute w-6 h-6 pointer-events-none z-10"
+                  >
+                    <div className="w-4 h-4 bg-brand-500 rounded-full shadow-lg transform -rotate-45"></div>
+                    <Badge variant="secondary" className="absolute -top-8 left-4 text-xs">
+                      Sarah
+                    </Badge>
+                  </motion.div>
+
+                  <motion.div
+                    animate={{ x: [200, 50, 180, 200], y: [80, 120, 60, 80] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                    className="absolute w-6 h-6 pointer-events-none z-10"
+                  >
+                    <div className="w-4 h-4 bg-brand-500 rounded-full shadow-lg transform -rotate-45"></div>
+                    <Badge variant="secondary" className="absolute -top-8 left-4 text-xs">
+                      Mike
+                    </Badge>
+                  </motion.div>
+                </div>
+
+                {/* Floating Action Buttons */}
+                <div className="absolute -right-6 top-1/2 transform -translate-y-1/2 space-y-4">
+                  {[PencilIcon, ChatBubbleLeftRightIcon, UsersIcon].map((Icon, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ scale: 1.1 }}
+                      className="w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center cursor-pointer hover:shadow-xl transition-all"
+                    >
+                      <Icon className="w-6 h-6 text-brand-600" />
+                    </motion.div>
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
       <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{stat.number}</div>
-                <div className="text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8"
+          >
+            {stats.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="text-center group cursor-pointer"
+                >
+                  <div className="flex items-center justify-center mb-4">
+                    <Icon className="w-8 h-8 text-brand-600 group-hover:scale-110 transition-transform duration-300" />
+                  </div>
+                  <div className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-blue-600 mb-2 group-hover:scale-110 transition-transform duration-300">
+                    {stat.number}
+                  </div>
+                  <div className="text-gray-600 font-medium">{stat.label}</div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-              Everything you need to collaborate
+      <section id="features" className="py-20 bg-gradient-to-br from-gray-50 via-white to-brand-50/30">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          {/* Section Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge variant="secondary" className="mb-6 px-4 py-2">
+              <BoltIcon className="w-4 h-4 mr-2" />
+              Powerful Features
+            </Badge>
+            <h2 className="font-heading text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+              Everything you need to
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-blue-600">
+                collaborate effectively
+              </span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Powerful features designed to make your team more productive and creative.
+              Our comprehensive suite of tools empowers your team to brainstorm, design, and innovate together seamlessly.
             </p>
+          </motion.div>
+
+          {/* Features Grid - Horizontal Layout */}
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="group"
+                >
+                  <Card className="h-full bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                    <CardContent className="p-8">
+                      <div className="flex items-start space-x-6">
+                        {/* Icon Section */}
+                        <div className="flex-shrink-0">
+                          <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                            <Icon className="w-8 h-8 text-white" />
+                          </div>
+                        </div>
+                        
+                        {/* Content Section */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-brand-600 transition-colors">
+                            {feature.title}
+                          </h3>
+                          <p className="text-gray-600 leading-relaxed mb-4">
+                            {feature.description}
+                          </p>
+                          
+                          {/* Benefits List */}
+                          <ul className="space-y-2">
+                            {feature.benefits.map((benefit, benefitIndex) => (
+                              <li key={benefitIndex} className="flex items-center text-sm text-gray-500">
+                                <CheckIcon className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+                                <span>{benefit}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </div>
 
+
+        </div>
+      </section>
+
+      {/* Solutions Section */}
+      <section id="solutions" className="py-20 bg-gradient-to-br from-brand-600 via-brand-700 to-blue-700 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0">
+          <div className="absolute top-8 right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-8 left-8 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge variant="secondary" className="mb-6 px-4 py-2 bg-white/20 text-white border-white/30">
+              <RocketLaunchIcon className="w-4 h-4 mr-2" />
+              Solutions
+            </Badge>
+            <h2 className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6">
+              Built for every team
+              <span className="block text-brand-300">
+                and workflow
+              </span>
+            </h2>
+            <p className="text-xl text-brand-100 max-w-3xl mx-auto leading-relaxed">
+              From design sprints to strategic planning, WhiteBoard adapts to your team's unique needs with powerful collaboration features.
+            </p>
+          </motion.div>
+
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Feature Cards */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div 
-                    key={index} 
-                    className={`p-6 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 ${
-                      currentFeature === index ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                  >
-                    <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
-                      <Icon className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                  </div>
-                );
-              })}
+            {/* Left: Solution Categories */}
+            <div className="text-white">
+              <h3 className="text-3xl font-bold mb-8">
+                Perfect for any
+                <span className="block text-brand-300">workflow or team</span>
+              </h3>
+              
+              {/* Solution Grid - 2x2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                {[
+                  {
+                    icon: PaintBrushIcon,
+                    title: 'Design & Creative',
+                    features: ['Design Systems', 'Wireframing', 'User Journey Maps', 'Brand Guidelines']
+                  },
+                  {
+                    icon: LightBulbIcon,
+                    title: 'Strategy & Planning', 
+                    features: ['Strategic Planning', 'Roadmaps', 'SWOT Analysis', 'Goal Setting']
+                  },
+                  {
+                    icon: UserGroupIcon,
+                    title: 'Team Collaboration',
+                    features: ['Remote Workshops', 'Team Meetings', 'Retrospectives', 'Daily Standups']
+                  },
+                  {
+                    icon: ChartBarIcon,
+                    title: 'Project Management',
+                    features: ['Project Planning', 'Task Management', 'Timeline Views', 'Progress Tracking']
+                  }
+                ].map((solution, index) => {
+                  const Icon = solution.icon;
+                  return (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                      className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-4 hover:bg-white/15 transition-all duration-300 group"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-white text-sm mb-2 group-hover:text-brand-300 transition-colors">
+                            {solution.title}
+                          </h4>
+                          <div className="space-y-1">
+                            {solution.features.slice(0, 2).map((feature, featureIndex) => (
+                              <div key={featureIndex} className="flex items-center text-xs text-brand-200">
+                                <CheckIcon className="w-3 h-3 text-green-400 mr-2 flex-shrink-0" />
+                                <span className="truncate">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <Button size="lg" variant="glass" className="text-white border-white/30 hover:bg-white/10">
+                <PlayIcon className="w-5 h-5 mr-2" />
+                Explore All Solutions
+              </Button>
             </div>
 
-            {/* Feature Showcase */}
+            {/* Right: Interactive Demo */}
             <div className="relative">
-              <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-200">
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl h-80 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className={`w-20 h-20 bg-gradient-to-r ${features[currentFeature].color} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}>
-                      {React.createElement(features[currentFeature].icon, { className: "w-10 h-10 text-white" })}
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{features[currentFeature].title}</h3>
-                    <p className="text-gray-600 max-w-sm">{features[currentFeature].description}</p>
+              <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl overflow-hidden">
+                <CardContent className="p-6">
+                  {/* Mock Whiteboard */}
+                  <div className="bg-white rounded-2xl h-64 relative overflow-hidden">
+                    {/* Grid Background */}
+                    <div 
+                      className="absolute inset-0 opacity-20" 
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(rgb(156 163 175 / 0.3) 1px, transparent 1px),
+                          linear-gradient(90deg, rgb(156 163 175 / 0.3) 1px, transparent 1px)
+                        `,
+                        backgroundSize: '20px 20px'
+                      }}
+                    ></div>
+                    
+                    {/* Animated Shapes */}
+                    <motion.div
+                      animate={{ 
+                        x: [20, 120, 60, 20],
+                        y: [30, 80, 140, 30],
+                        rotate: [0, 45, -45, 0]
+                      }}
+                      transition={{ 
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                      className="absolute w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg shadow-lg"
+                    />
+                    
+                    <motion.div
+                      animate={{ 
+                        x: [160, 60, 140, 160],
+                        y: [50, 120, 40, 50],
+                        scale: [1, 1.2, 0.8, 1]
+                      }}
+                      transition={{ 
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 1
+                      }}
+                      className="absolute w-8 h-16 bg-gradient-to-r from-brand-500 to-pink-500 rounded-full shadow-lg"
+                    />
+
+                    <motion.div
+                      animate={{ 
+                        x: [80, 180, 40, 80],
+                        y: [120, 60, 100, 120]
+                      }}
+                      transition={{ 
+                        duration: 7,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 2
+                      }}
+                      className="absolute w-16 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full shadow-lg"
+                    />
+
+                    {/* Live User Cursors */}
+                    <motion.div
+                      animate={{ x: [40, 160, 80, 40], y: [80, 40, 160, 80] }}
+                      transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute pointer-events-none"
+                    >
+                      <div className="w-4 h-4 bg-brand-500 rounded-full shadow-lg transform -rotate-45"></div>
+                      <Badge variant="secondary" className="absolute -top-8 left-4 text-xs bg-brand-500 text-white">
+                        Alex
+                      </Badge>
+                    </motion.div>
+
+                    <motion.div
+                      animate={{ x: [140, 60, 180, 140], y: [120, 180, 60, 120] }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                      className="absolute pointer-events-none"
+                    >
+                      <div className="w-4 h-4 bg-brand-500 rounded-full shadow-lg transform -rotate-45"></div>
+                      <Badge variant="secondary" className="absolute -top-8 left-4 text-xs bg-brand-500 text-white">
+                        Sam
+                      </Badge>
+                    </motion.div>
                   </div>
-                </div>
-              </div>
+
+                  {/* Status Bar */}
+                  <div className="flex items-center justify-between mt-4 text-white/80">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-sm">2 users online</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">Auto-saved</span>
+                      <CheckIcon className="w-4 h-4 text-green-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Loved by teams worldwide
+      <section id="testimonials" className="py-20 bg-gradient-to-br from-white via-brand-50/30 to-blue-50/30">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          {/* Section Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge variant="secondary" className="mb-6 px-4 py-2">
+              <HeartIcon className="w-4 h-4 mr-2" />
+              Customer Stories
+            </Badge>
+            <h2 className="font-heading text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+              Loved by teams
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-blue-600">
+                worldwide
+              </span>
             </h2>
-            <p className="text-xl text-gray-600">
-              See what our users have to say about WhiteBoard
-            </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2">
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <StarIcon key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+          {/* Featured Testimonial */}
+          <motion.div
+            key={activeTestimonial}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-16"
+          >
+            <Card className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm border-white/20 shadow-2xl">
+              <CardContent className="p-12 text-center">
+                <div className="flex justify-center mb-6">
+                  {[...Array(testimonials[activeTestimonial].rating)].map((_, i) => (
+                    <StarIcon key={i} className="w-6 h-6 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">"{testimonial.content}"</p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold mr-4">
-                    {testimonial.avatar}
+                <blockquote className="text-2xl text-gray-700 mb-8 leading-relaxed font-medium">
+                  "{testimonials[activeTestimonial].content}"
+                </blockquote>
+                <div className="flex items-center justify-center space-x-4">
+                  <div className={`w-16 h-16 ${testimonials[activeTestimonial].bgColor} rounded-full flex items-center justify-center shadow-lg`}>
+                    <span className="text-white text-xl font-bold">
+                      {testimonials[activeTestimonial].avatar}
+                    </span>
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-sm text-gray-600">{testimonial.role} at {testimonial.company}</div>
+                  <div className="text-left">
+                    <div className="font-semibold text-gray-900 text-lg">{testimonials[activeTestimonial].name}</div>
+                    <div className="text-gray-600">{testimonials[activeTestimonial].role}</div>
+                    <div className="text-brand-600 font-medium">{testimonials[activeTestimonial].company}</div>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Testimonial Navigation */}
+          <div className="flex justify-center space-x-2">
+            {testimonials.map((_, index) => (
+              <button
+                key={index}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  index === activeTestimonial 
+                    ? 'bg-brand-500 scale-125' 
+                    : 'bg-gray-300 hover:bg-gray-400'
+                }`}
+                onClick={() => setActiveTestimonial(index)}
+              />
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Simple, transparent pricing
-            </h2>
-            <p className="text-xl text-gray-600">
-              Start free, upgrade when you need more features
-            </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
-            {/* Free Plan */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-200">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Free Plan</h3>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold text-gray-900">$0</span>
-                  <span className="text-xl text-gray-600">/month</span>
+          {/* Trust Indicators */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="mt-16 text-center"
+          >
+            <p className="text-gray-500 mb-8">Trusted by innovative teams at</p>
+            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
+              {['Google', 'Microsoft', 'Apple', 'Amazon', 'Meta', 'Tesla'].map((company, index) => (
+                <div key={index} className="text-2xl font-bold text-gray-400 hover:text-gray-600 transition-colors">
+                  {company}
                 </div>
-                <p className="text-gray-600">Perfect for getting started</p>
-              </div>
-
-              <ul className="space-y-4 mb-8">
-                {pricingFeatures.slice(0, 4).map((feature, index) => (
-                  <li key={index} className="flex items-center">
-                    <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                to="/register"
-                className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl hover:bg-gray-800 transition-colors font-semibold text-center block"
-              >
-                Get Started Free
-              </Link>
+              ))}
             </div>
-
-            {/* Pro Plan */}
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl shadow-2xl p-8 text-white relative transform scale-105">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-semibold">
-                  Most Popular
-                </span>
-              </div>
-              
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold mb-2">Pro Plan</h3>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold">$9</span>
-                  <span className="text-xl opacity-90">/month</span>
-                </div>
-                <p className="opacity-90">Perfect for growing teams</p>
-              </div>
-
-              <ul className="space-y-4 mb-8">
-                {pricingFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-center">
-                    <CheckIcon className="w-5 h-5 text-white mr-3 flex-shrink-0" />
-                    <span className="opacity-90">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                to="/register"
-                className="w-full bg-white text-blue-600 py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors font-semibold text-center block"
-              >
-                Start Free Trial
-              </Link>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-r from-brand-600 to-blue-600 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-blue-600/90 to-purple-600/90"></div>
           <div className="absolute top-10 right-10 w-32 h-32 bg-white/10 rounded-full"></div>
           <div className="absolute bottom-10 left-10 w-24 h-24 bg-white/10 rounded-full"></div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-            Ready to transform your collaboration?
-          </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            Join thousands of teams already using WhiteBoard to bring their ideas to life.
-          </p>
-          <Link
-            to="/register"
-            className="inline-flex items-center bg-white text-blue-600 px-8 py-4 rounded-xl hover:bg-gray-100 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center relative">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
           >
-            Get Started Today
-            <ArrowRightIcon className="w-5 h-5 ml-2" />
-          </Link>
+            <h2 className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6">
+              Ready to transform your collaboration?
+            </h2>
+            <p className="text-xl text-brand-100 mb-8 max-w-3xl mx-auto">
+              Join thousands of teams already using WhiteBoard to bring their ideas to life.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg" variant="glass" className="text-lg">
+                <Link to="/register">
+                  Start Creating Free
+                  <ArrowRightIcon className="w-5 h-5 ml-2" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg border-white/30 hover:bg-white/10">
+                <PlayIcon className="w-5 h-5 mr-2" />
+                Watch Demo
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">W</span>
+      <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 right-20 w-40 h-40 bg-brand-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 left-20 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="relative">
+          {/* Newsletter Section */}
+          <div className="border-b border-gray-700/50 py-16">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="text-center max-w-3xl mx-auto"
+              >
+                <h3 className="text-3xl font-bold text-white mb-4">
+                  Stay updated with WhiteBoard
+                </h3>
+                <p className="text-gray-400 mb-8 text-lg">
+                  Get the latest features, tips, and insights delivered to your inbox
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  />
+                  <Button className="px-8 py-3 bg-gradient-to-r from-brand-600 to-blue-600 hover:from-brand-700 hover:to-blue-700">
+                    Subscribe
+                    <ArrowRightIcon className="w-4 h-4 ml-2" />
+                  </Button>
                 </div>
-                <span className="font-bold text-xl text-white">WhiteBoard</span>
-              </div>
-              <p className="text-gray-400 mb-4">
-                The most intuitive collaborative whiteboard for teams.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <span className="sr-only">Twitter</span>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
-                  </svg>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <span className="sr-only">GitHub</span>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Templates</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Integrations</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold mb-4">Support</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">API</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Status</a></li>
-              </ul>
+                <p className="text-gray-500 text-sm mt-4">
+                  No spam, unsubscribe at any time
+                </p>
+              </motion.div>
             </div>
           </div>
-          
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-400 text-sm">
-              © 2025 WhiteBoard. All rights reserved.
-            </div>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
+
+          {/* Main Footer Content */}
+          <div className="py-16">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+              <div className="grid lg:grid-cols-5 gap-12 mb-12">
+                {/* Brand Section */}
+                <div className="lg:col-span-2">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    viewport={{ once: true }}
+                  >
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-r from-brand-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <PaintBrushIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="font-heading font-bold text-2xl text-white">WhiteBoard</span>
+                    </div>
+                    <p className="text-gray-400 mb-6 max-w-md leading-relaxed">
+                      The most intuitive collaborative whiteboard for modern teams. Transform ideas into reality with seamless collaboration.
+                    </p>
+                    
+                    {/* Social Links */}
+                    <div className="flex space-x-4 mb-6">
+                      {[
+                        { name: 'Twitter', icon: 'T', color: 'hover:bg-blue-600' },
+                        { name: 'GitHub', icon: 'G', color: 'hover:bg-gray-600' },
+                        { name: 'LinkedIn', icon: 'L', color: 'hover:bg-blue-700' },
+                        { name: 'Discord', icon: 'D', color: 'hover:bg-indigo-600' }
+                      ].map((social) => (
+                        <motion.a
+                          key={social.name}
+                          href="#"
+                          whileHover={{ scale: 1.1, y: -2 }}
+                          className={`w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 ${social.color}`}
+                        >
+                          <span className="sr-only">{social.name}</span>
+                          <span className="font-bold text-lg">{social.icon}</span>
+                        </motion.a>
+                      ))}
+                    </div>
+
+                    {/* Awards/Recognition */}
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <StarIcon className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                        <span>4.9/5 on G2</span>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        <span>99.9% Uptime</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+                
+                {/* Product Links */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <h3 className="text-white font-semibold mb-6 flex items-center">
+                    <CodeBracketIcon className="w-5 h-5 mr-2 text-brand-400" />
+                    Product
+                  </h3>
+                  <ul className="space-y-4">
+                    {['Features', 'Templates', 'Integrations', 'API Docs', 'What\'s New'].map((item) => (
+                      <li key={item}>
+                        <a href="#" className="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center group">
+                          <ArrowRightIcon className="w-3 h-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {item}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+                
+                {/* Company Links */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  viewport={{ once: true }}
+                >
+                  <h3 className="text-white font-semibold mb-6 flex items-center">
+                    <UserGroupIcon className="w-5 h-5 mr-2 text-brand-400" />
+                    Company
+                  </h3>
+                  <ul className="space-y-4">
+                    {['About Us', 'Blog', 'Careers', 'Press Kit', 'Contact'].map((item) => (
+                      <li key={item}>
+                        <a href="#" className="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center group">
+                          <ArrowRightIcon className="w-3 h-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {item}
+                          {item === 'Careers' && (
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              We're hiring!
+                            </Badge>
+                          )}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+                
+                {/* Resources Links */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  viewport={{ once: true }}
+                >
+                  <h3 className="text-white font-semibold mb-6 flex items-center">
+                    <BookOpenIcon className="w-5 h-5 mr-2 text-brand-400" />
+                    Resources
+                  </h3>
+                  <ul className="space-y-4">
+                    {[
+                      { name: 'Help Center', badge: null },
+                      { name: 'Documentation', badge: null },
+                      { name: 'Community', badge: 'Active' },
+                      { name: 'System Status', badge: null },
+                      { name: 'Security', badge: null }
+                    ].map((item) => (
+                      <li key={item.name}>
+                        <a href="#" className="text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 flex items-center group">
+                          <ArrowRightIcon className="w-3 h-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {item.name}
+                          {item.badge && (
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              </div>
+              
+              <Separator className="bg-gray-700/50 mb-8" />
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                viewport={{ once: true }}
+                className="flex flex-col lg:flex-row justify-between items-center space-y-6 lg:space-y-0"
+              >
+                <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                  <div className="text-gray-400 text-sm">
+                    © 2025 WhiteBoard. All rights reserved.
+                  </div>
+                  <div className="flex items-center space-x-1 text-sm text-gray-500">
+                    <span>Made with</span>
+                    <HeartIcon className="w-4 h-4 text-red-500 fill-current" />
+                    <span>for creative teams</span>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-6">
+                  {[
+                    'Privacy Policy',
+                    'Terms of Service',
+                    'Cookie Policy',
+                    'GDPR'
+                  ].map((item, index) => (
+                    <a
+                      key={item}
+                      href="#"
+                      className="text-gray-400 hover:text-white text-sm transition-colors"
+                    >
+                      {item}
+                    </a>
+                  ))}
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>

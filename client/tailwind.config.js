@@ -5,6 +5,10 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      heading: ['Poppins', 'system-ui', 'sans-serif']
+    },
     extend: {
       colors: {
         border: "hsl(var(--border))",
@@ -36,14 +40,26 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: {
+          DEFAULT: '#7b3fe4',
+          dark: '#432b9b',
+          light: '#9f6ae8',
+          50: '#f8f6ff',
+          100: '#f0ebff',
+          200: '#e4d9ff',
+          300: '#d1b8ff',
+          400: '#b689ff',
+          500: '#9f6ae8',
+          600: '#7b3fe4',
+          700: '#6b2fd1',
+          800: '#5a28a8',
+          900: '#432b9b'
+        }
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-      },
-      fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
       },
       animation: {
         "fade-in": "fadeIn 0.6s ease-out",
@@ -77,5 +93,9 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('tailwindcss-animate'),
+  ],
 }

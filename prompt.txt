@@ -1,0 +1,137 @@
+> **You're updating and refining the existing UI** of a collaborative whiteboard web app called **Cursor AI**. The core layout and structure are already implemented using **Vite + React 19 + Tailwind CSS + Framer Motion + Zustand + Radix + Lucide Icons**.
+
+The current design looks functional but **AI-generated or template-like**, and you now want to **upgrade it to feel like a real, professional SaaS product** built by a senior frontend team.
+
+---
+
+### 🎯 Goal
+
+Improve the **design realism, polish, responsiveness, UX consistency, and brand presence** without rebuilding from scratch. All changes must integrate seamlessly with the current codebase.
+
+---
+
+### 🧠 Key Improvements to Make
+
+#### ✅ 1. **Visual Design & Branding**
+
+* Apply a **distinct brand identity**: add a consistent **primary gradient (e.g., violet → indigo)**, custom font (`Inter`, `Poppins`, or `DM Sans`), and padding rhythm
+* Replace any **generic colors and shadows** with **Tailwind's soft shadows (`shadow-md`, `shadow-lg`)** and smooth gradients
+* Use **glassmorphism** for key cards and modals (`bg-white/10`, `backdrop-blur-sm`, `rounded-2xl`, `border border-white/20`)
+* Make typography **hierarchies clearer** with Tailwind classes like `text-4xl font-semibold leading-tight` for headings, `text-muted-foreground` for subtext
+
+#### ✅ 2. **Use ShadCN UI Components**
+
+* Replace custom buttons, modals, tabs, alerts, or inputs with **ShadCN UI** equivalents to improve UX and design quality
+* Ensure consistent spacing, padding, button sizes, and icon use across the site
+* Customize theme colors in `tailwind.config.ts` and `shadcn/ui.config.ts` to match Cursor AI brand
+
+#### ✅ 3. **Animation & Interactivity**
+
+* Add **Framer Motion** transitions to all major sections:
+
+  * Hero elements fade-in from bottom on load
+  * Features animate on scroll
+  * CTA buttons scale on hover and click
+* Use `tailwindcss-animate` for pre-defined animation classes (`fade-in`, `slide-up`, `pulse`, etc.)
+* Add animated **cursor trails or glow** when hovering on canvas/hero sections
+
+#### ✅ 4. **Responsive & Layout Polish**
+
+* Ensure **all spacing, typography, and button sizing** works across `sm`, `md`, `lg`, `xl` breakpoints
+* Use `max-w-7xl mx-auto px-6` consistently to align sections
+* Switch rigid flex/grids to **responsive grid layouts** using `grid-cols-1 md:grid-cols-2` or `lg:grid-cols-3`
+
+#### ✅ 5. **Improve Key Sections**
+
+* **Hero Section**:
+
+  * Add a gradient overlay or subtle particles in background
+  * Add an **interactive canvas preview** or animated GIF mock
+  * Buttons should have **arrow icons** and hover scale with soft shadow
+
+* **Features Section**:
+
+  * Convert static cards to **animated hover cards** with Framer or ShadCN
+  * Add Lucide icons or simple line illustrations
+  * Use `group-hover`, `transition-all` effects for cards
+
+* **Pricing Section**:
+
+  * Use **ShadCN Cards + Switches**
+  * Add a toggle for Monthly/Yearly
+  * Highlight the “Pro” plan with `ring-2`, `bg-gradient-to-tr`, and “Most Popular” badge
+
+* **Testimonials**:
+
+  * Replace static layout with a **Framer carousel**
+  * Include avatar images + names + company + roles
+  * Use star icons from Lucide or inline SVG
+
+* **Footer**:
+
+  * Use a dark background with soft accent lines
+  * Add newsletter signup input, social icons
+  * Use consistent columns for Products, Company, Resources
+
+---
+
+### 🧩 Tailwind Plugins / Libraries to Use
+
+Ensure the following are integrated:
+
+```bash
+npm install @tailwindcss/typography @tailwindcss/forms tailwindcss-animate @fontsource/inter @fontsource/poppins
+```
+
+Update `tailwind.config.js`:
+
+```ts
+plugins: [
+  require('@tailwindcss/forms'),
+  require('@tailwindcss/typography'),
+  require('tailwindcss-animate'),
+],
+theme: {
+  fontFamily: {
+    sans: ['Inter', 'sans-serif'],
+    heading: ['Poppins', 'sans-serif']
+  },
+  extend: {
+    colors: {
+      brand: {
+        DEFAULT: '#7b3fe4', // your violet
+        dark: '#432b9b'
+      }
+    }
+  }
+}
+```
+
+---
+
+### 🧪 Performance and UX Fixes
+
+* Lazy-load images and animation-heavy sections
+* Use `React.lazy()` or `dynamic import()` for large feature components
+* Ensure toast notifications are consistent (with `sonner` or `react-hot-toast`)
+* Add **404 / error fallback pages** with light illustrations
+
+---
+
+### 💬 UX Copy Cleanup
+
+* Ensure all buttons, headings, and CTAs use **natural, benefit-driven copy**
+
+  * ✅ Good: “Start Creating Free” → “Bring Your Ideas to Life”
+  * ❌ Bad: “Watch Demo” → too generic
+
+---
+
+### ✅ Output You Expect
+
+* Component-level updates that work within your React + Vite setup
+* Tailwind + ShadCN UI class-based enhancements, not full rewrites
+* Animated, interactive, polished UI — no generic or flat feel
+
+---
+
