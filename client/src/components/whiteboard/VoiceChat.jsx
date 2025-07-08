@@ -85,7 +85,7 @@ const VoiceChat = ({ boardId }) => {
           onClick={() => setIsVoiceChatOpen(true)}
           className="fixed left-8 bottom-8 z-50 shadow-xl bg-gradient-to-br from-green-500 to-blue-600 text-white rounded-full hover:scale-105 transition-transform"
         >
-          <PhoneIcon className="w-6 h-6" />
+          <PhoneIcon className="w-8 h-8" />
         </Button>
       )}
       {isVoiceChatOpen && (
@@ -96,7 +96,7 @@ const VoiceChat = ({ boardId }) => {
             onClick={() => setIsVoiceChatOpen(false)}
             className="fixed left-[380px] bottom-8 z-50 shadow-xl rounded-full hover:scale-105 transition-transform"
           >
-            <PhoneXMarkIcon className="w-6 h-6" />
+            <PhoneXMarkIcon className="w-8 h-8" />
           </Button>
           <div
             ref={jitsiContainerRef}
