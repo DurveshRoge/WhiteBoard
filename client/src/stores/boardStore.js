@@ -19,7 +19,7 @@ export const useBoardStore = create((set, get) => ({
     const lastRequest = get().recentRequests.get(requestKey);
     
     if (lastRequest && now - lastRequest < get().REQUEST_TIMEOUT) {
-      console.log('BoardStore - Throttling repeated fetchBoards request');
+      console.log('Throttling repeated fetchBoards request');
       return { success: false, error: 'Request throttled to prevent infinite loop' };
     }
     
@@ -28,6 +28,9 @@ export const useBoardStore = create((set, get) => ({
     
     try {
       set({ loading: true, error: null });
+      
+      // Log auth status for debugging
+      console.log('Auth header present:', !!axios.defaults.headers.common['Authorization']);
       
       const response = await axios.get('/api/boards');
       
@@ -39,7 +42,7 @@ export const useBoardStore = create((set, get) => ({
         boards = response.data;
       }
       
-      console.log(`BoardStore - Successfully fetched ${boards.length} boards`);
+      console.log('Fetched boards:', boards);
       
       set({ 
         boards, 
@@ -49,31 +52,22 @@ export const useBoardStore = create((set, get) => ({
       
       return { success: true, boards };
     } catch (error) {
-      console.error('BoardStore - Error fetching boards:', error.response?.data || error.message);
+      console.error('Error fetching boards:', error);
       
       // Handle auth issues
       if (error.response?.status === 403 || error.response?.status === 401) {
-        console.warn('BoardStore - Authentication issue when fetching boards, attempting to refresh');
+        console.error('Authentication issue when fetching boards');
         // Try to refresh the auth token
         const { useAuthStore } = await import('./authStore');
         await useAuthStore.getState().initializeAuth();
       }
       
-      // Handle empty state vs actual errors
-      const isEmptyState = error.response?.status === 404 || error.response?.data?.message?.includes('No boards');
       const errorMessage = error.response?.data?.message || 'Failed to fetch boards';
-      
       set({ 
-        boards: isEmptyState ? [] : get().boards, // Keep existing boards if it's just a temporary error
         loading: false, 
-        error: isEmptyState ? null : errorMessage // Don't treat empty state as an error
+        error: errorMessage 
       });
-      
-      return { 
-        success: isEmptyState ? true : false, 
-        error: isEmptyState ? null : errorMessage,
-        boards: isEmptyState ? [] : get().boards
-      };
+      return { success: false, error: errorMessage };
     }
   },
 

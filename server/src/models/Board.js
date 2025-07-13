@@ -10,6 +10,10 @@ const elementSchema = new mongoose.Schema({
     required: true,
     enum: ['rectangle', 'circle', 'arrow', 'line', 'pen', 'text', 'sticky', 'sticky-note', 'table', 'emoji', 'flowchart', 'connector', 'image']
   },
+  tool: {
+    type: String,
+    enum: ['pen', 'eraser']
+  },
   x: { type: Number, required: true },
   y: { type: Number, required: true },
   width: Number,

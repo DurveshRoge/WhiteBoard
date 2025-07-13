@@ -7,107 +7,6 @@ import { v4 as uuidv4 } from 'uuid';
 const activeUsers = new Map();
 const userSockets = new Map();
 
-// Drawing update throttling
-const drawingUpdateQueues = new Map();
-const DRAWING_UPDATE_THROTTLE = 100; // milliseconds
-
-// Helper function to handle throttled drawing updates
-const throttledDrawingUpdate = (boardId, elements, userId) => {
-  if (!drawingUpdateQueues.has(boardId)) {
-    drawingUpdateQueues.set(boardId, {
-      timeout: null,
-      latestElements: null,
-      lastUserId: null
-    });
-  }
-
-  const queue = drawingUpdateQueues.get(boardId);
-  queue.latestElements = elements;
-  queue.lastUserId = userId;
-
-  if (queue.timeout) {
-    clearTimeout(queue.timeout);
-  }
-
-  queue.timeout = setTimeout(async () => {
-    try {
-      await Board.findByIdAndUpdate(
-        boardId,
-        { 
-          $set: {
-            elements: queue.latestElements.map(element => ({
-              ...element,
-              createdBy: element.createdBy || queue.lastUserId,
-              lastModifiedBy: queue.lastUserId,
-              x: element.x || 0,
-              y: element.y || 0,
-              type: element.type || element.tool || 'pen',
-              ...(element.tool === 'pen' && { type: 'pen' })
-            })),
-            lastActivity: new Date()
-          }
-        },
-        { new: true, runValidators: false }
-      );
-    } catch (error) {
-      console.error('Error in throttled drawing update:', error);
-    } finally {
-      // Clear the queue
-      drawingUpdateQueues.delete(boardId);
-    }
-  }, DRAWING_UPDATE_THROTTLE);
-};
-const updateBoardWithRetry = async (boardId, updateFn, maxRetries = 3) => {
-  let retryCount = 0;
-  
-  while (retryCount < maxRetries) {
-    try {
-      // Get fresh board data for each attempt
-      const board = await Board.findById(boardId);
-      if (!board) {
-        throw new Error('Board not found');
-      }
-      
-      // Apply the update function to get the changes
-      const originalBoard = board.toObject();
-      await updateFn(board);
-      
-      // Use findOneAndUpdate with version check instead of save()
-      const updatedBoard = await Board.findOneAndUpdate(
-        { _id: boardId, __v: board.__v },
-        { 
-          $set: {
-            elements: board.elements,
-            lastActivity: board.lastActivity,
-            comments: board.comments,
-            settings: board.settings
-          },
-          $inc: { __v: 1 }
-        },
-        { new: true, runValidators: true }
-      );
-      
-      if (!updatedBoard) {
-        // Document version changed, retry
-        throw new Error('Version conflict - document was modified');
-      }
-      
-      return updatedBoard; // Success
-    } catch (error) {
-      retryCount++;
-      
-      if ((error.message.includes('Version conflict') || error.name === 'VersionError') && retryCount < maxRetries) {
-        // Wait a bit before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 25));
-        continue;
-      } else {
-        // If it's not a version error or we've exceeded max retries, throw the error
-        throw error;
-      }
-    }
-  }
-};
-
 // Socket authentication middleware
 const authenticateSocket = async (socket, next) => {
   try {
@@ -219,6 +118,31 @@ export const setupSocketHandlers = (io) => {
           activeUsers: activeUsersList
         });
 
+        // Migrate any existing eraser elements to the new format
+        let needsSave = false;
+        if (board.elements && board.elements.length > 0) {
+          board.elements.forEach(element => {
+            if (element.type === 'eraser') {
+              element.type = 'pen';
+              element.tool = 'eraser';
+              needsSave = true;
+            }
+          });
+        }
+        
+        // Save if migration was needed
+        if (needsSave) {
+          await Board.findOneAndUpdate(
+            { _id: boardId },
+            { elements: board.elements },
+            { 
+              new: true,
+              runValidators: true,
+              version: false
+            }
+          );
+        }
+        
         // Send current board state and active users to the joining user
         socket.emit('board-joined', {
           board: {
@@ -264,17 +188,43 @@ export const setupSocketHandlers = (io) => {
         const { elements, action, elementId } = data;
         const roomName = `board:${socket.currentBoard}`;
 
-        // Update board elements in database with throttling to prevent conflicts
-        if (elements) {
-          // Check permissions first
-          const board = await Board.findById(socket.currentBoard);
-          if (!board || !board.hasAccess(socket.userId, 'editor')) {
-            socket.emit('error', { message: 'No edit permissions' });
-            return;
-          }
+        // Check if user has edit permissions
+        const board = await Board.findById(socket.currentBoard);
+        if (!board || !board.hasAccess(socket.userId, 'editor')) {
+          socket.emit('error', { message: 'No edit permissions' });
+          return;
+        }
 
-          // Use throttled update to batch frequent drawing changes
-          throttledDrawingUpdate(socket.currentBoard, elements, socket.userId);
+        // Update board elements in database
+        if (elements) {
+          // Ensure all elements have required fields
+          const formattedElements = elements.map(element => ({
+            ...element,
+            createdBy: socket.userId,
+            lastModifiedBy: socket.userId,
+            // Ensure required fields are present
+            x: element.x || 0,
+            y: element.y || 0,
+            // Handle pen and eraser tools properly - migrate old eraser types
+            type: element.type === 'eraser' ? 'pen' : (element.type || (element.tool === 'eraser' ? 'pen' : element.tool) || 'pen'),
+            // Preserve the tool property for eraser elements
+            tool: element.type === 'eraser' ? 'eraser' : (element.tool === 'eraser' ? 'eraser' : element.tool)
+          }));
+          
+          // Use findOneAndUpdate to avoid version conflicts
+          await Board.findOneAndUpdate(
+            { _id: socket.currentBoard },
+            { 
+              elements: formattedElements,
+              lastActivity: new Date()
+            },
+            { 
+              new: true,
+              runValidators: true,
+              // Disable optimistic concurrency control for this update
+              version: false
+            }
+          );
         }
 
         // Broadcast to all other users in the room
@@ -374,9 +324,8 @@ export const setupSocketHandlers = (io) => {
         }
 
         const { settings } = data;
-        await updateBoardWithRetry(socket.currentBoard, (board) => {
-          board.settings = { ...board.settings, ...settings };
-        });
+        board.settings = { ...board.settings, ...settings };
+        await board.save();
 
         const roomName = `board:${socket.currentBoard}`;
         socket.to(roomName).emit('board-settings-updated', {
@@ -523,20 +472,16 @@ export const setupSocketHandlers = (io) => {
         const board = await Board.findById(boardId);
         if (!board) return;
 
-        // Add comment to board using retry logic
-        let serverComment;
-        await updateBoardWithRetry(boardId, (board) => {
-          if (!board.comments) board.comments = [];
-          serverComment = {
-            ...comment,
-            userId: socket.userId,
-            userName: socket.user.name,
-            userAvatar: socket.user.avatarUrl,
-            createdAt: new Date(),
-            id: new Date().getTime().toString() // Simple ID generation
-          };
-          board.comments.push(serverComment);
-        });
+        // Add comment to board
+        if (!board.comments) board.comments = [];
+        const serverComment = {
+          ...comment,
+          userId: socket.userId,
+          userName: socket.user.name,
+          userAvatar: socket.user.avatarUrl,
+        };
+        board.comments.push(serverComment);
+        await board.save();
 
         // Broadcast to all users in the board
         const roomName = `board:${boardId}`;
@@ -554,27 +499,26 @@ export const setupSocketHandlers = (io) => {
         const { boardId, commentId, text } = data;
         if (!boardId || !commentId || !text) return;
 
-        // Update comment using retry logic
-        await updateBoardWithRetry(boardId, (board) => {
-          if (!board.comments) {
-            throw new Error('No comments found on board');
-          }
-          
-          const comment = board.comments.id(commentId);
-          if (!comment) {
-            throw new Error('Comment not found');
-          }
-          if (comment.userId.toString() !== socket.userId.toString()) {
-            throw new Error('Cannot edit this comment: userId mismatch');
-          }
+        const board = await Board.findById(boardId);
+        if (!board || !board.comments) return;
 
-          comment.text = text;
-          comment.lastEdited = new Date();
-        });
+        const comment = board.comments.find(c => c.id === commentId);
+        if (!comment) {
+          socket.emit('error', { message: 'Comment not found', commentId });
+          return;
+        }
+        if (comment.userId.toString() !== socket.userId.toString()) {
+          socket.emit('error', { message: 'Cannot edit this comment: userId mismatch', commentUserId: comment.userId, socketUserId: socket.userId });
+          return;
+        }
+
+        comment.text = text;
+        comment.lastEdited = new Date();
+        await board.save();
 
         // Broadcast update
         const roomName = `board:${boardId}`;
-        io.to(roomName).emit('comment-updated', { comment: { id: commentId, text, lastEdited: new Date() } });
+        io.to(roomName).emit('comment-updated', { comment });
 
         console.log(`💬 Comment updated in board ${boardId} by ${socket.user.name}`);
       } catch (error) {

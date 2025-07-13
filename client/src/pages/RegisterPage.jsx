@@ -71,9 +71,9 @@ const RegisterPage = () => {
 
   const benefits = [
     {
-      icon: PaintBrushIcon,
-      title: 'Creative Freedom',
-      description: 'Unlimited canvas space to bring your ideas to life'
+      icon: SparklesIcon,
+      title: 'AI-Powered Tools',
+      description: 'Smart suggestions and automated workflows to boost productivity'
     },
     {
       icon: UsersIcon,

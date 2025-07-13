@@ -52,19 +52,11 @@ const Dashboard = () => {
     const loadInitialBoards = async () => {
       try {
         const result = await fetchBoards();
-        if (!result.success && result.error) {
-          // Only log meaningful errors, not empty state
-          if (!result.error.includes('throttled') && !result.error.includes('No boards')) {
-            console.warn('Dashboard - Unable to load boards:', result.error);
-            // Only show toast for actual errors, not empty states
-            if (result.error.includes('Failed to fetch') || result.error.includes('Authentication')) {
-              toast.error('Unable to load boards. Please try refreshing the page.');
-            }
-          }
+        if (!result.success) {
+          console.error('Failed to load boards');
         }
       } catch (error) {
-        console.error('Dashboard - Unexpected error loading boards:', error);
-        toast.error('An unexpected error occurred while loading boards.');
+        console.error('Dashboard - Error loading boards:', error);
       }
     };
     
@@ -230,81 +222,33 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {/* Total Boards Card */}
-          <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 group">
+          <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white border-0 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-brand-100 text-sm font-medium">Total Boards</p>
-                  <p className="text-3xl font-bold group-hover:scale-110 transition-transform duration-300">{boards?.length || 0}</p>
+                  <p className="text-3xl font-bold">{boards?.length || 0}</p>
                 </div>
-                <div className="p-3 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors duration-300">
-                  <FolderIcon className="w-6 h-6 text-white" />
-                </div>
+                <FolderIcon className="w-8 h-8 text-brand-200" />
               </div>
             </CardContent>
           </Card>
 
           {/* Active Collaborators Card */}
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 group">
+          <Card className="bg-gradient-to-br from-blue-500 to-brand-600 text-white border-0 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm font-medium">Active Collaborators</p>
-                  <p className="text-3xl font-bold group-hover:scale-110 transition-transform duration-300">{
+                  <p className="text-3xl font-bold">{
                     Array.isArray(boards) && boards.length > 0
                       ? Array.from(new Set(boards.flatMap(b => (b.collaborators || []).map(c => c.user?._id || c.user)))).length
                       : 0
                   }</p>
                 </div>
-                <div className="p-3 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors duration-300">
-                  <UsersIcon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity Card */}
-          <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 group">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-emerald-100 text-sm font-medium">Recent Activity</p>
-                  <p className="text-3xl font-bold group-hover:scale-110 transition-transform duration-300">{
-                    Array.isArray(boards) && boards.length > 0
-                      ? boards.filter(b => {
-                          const lastActivity = new Date(b.lastActivity || b.updatedAt);
-                          const today = new Date();
-                          const diffTime = Math.abs(today - lastActivity);
-                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                          return diffDays <= 7;
-                        }).length
-                      : 0
-                  }</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors duration-300">
-                  <ClockIcon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Starred Boards Card */}
-          <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 group">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-amber-100 text-sm font-medium">Starred Boards</p>
-                  <p className="text-3xl font-bold group-hover:scale-110 transition-transform duration-300">{
-                    Array.isArray(boards) && boards.length > 0
-                      ? boards.filter(b => b.isStarred).length
-                      : 0
-                  }</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors duration-300">
-                  <StarIcon className="w-6 h-6 text-white" />
-                </div>
+                <UsersIcon className="w-8 h-8 text-blue-200" />
               </div>
             </CardContent>
           </Card>
@@ -312,73 +256,41 @@ const Dashboard = () => {
 
         {/* Search and Filters */}
         <div className={`mb-8 transition-all duration-1000 delay-400 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search whiteboards..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white/70 backdrop-blur-sm shadow-lg"
-              />
-            </div>
-            
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="h-12 px-6 bg-white/70 backdrop-blur-sm border-gray-300 hover:bg-white/90 shadow-lg"
-              >
-                <StarIcon className="w-4 h-4 mr-2" />
-                Starred
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 px-6 bg-white/70 backdrop-blur-sm border-gray-300 hover:bg-white/90 shadow-lg"
-              >
-                <ClockIcon className="w-4 h-4 mr-2" />
-                Recent
-              </Button>
-            </div>
+          <div className="relative max-w-md">
+            <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search whiteboards..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            />
           </div>
         </div>
 
         {/* Boards Grid */}
         {filteredBoards.length === 0 ? (
           <div className={`text-center py-16 transition-all duration-1000 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="relative w-40 h-40 mx-auto mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-brand-600 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
-                <PencilIcon className="w-20 h-20 text-white" />
-              </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                <SparklesIcon className="w-4 h-4 text-white" />
-              </div>
+            <div className="w-32 h-32 bg-gradient-to-r from-blue-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <PencilIcon className="w-16 h-16 text-white" />
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              {searchQuery ? 'No matching whiteboards' : 'Ready to create magic?'}
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              {searchQuery ? 'No matching whiteboards' : 'No whiteboards yet'}
             </h3>
-            <p className="text-gray-600 mb-8 text-lg max-w-lg mx-auto leading-relaxed">
+            <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
               {searchQuery 
                 ? 'Try adjusting your search terms to find what you\'re looking for.'
-                : 'Your creative journey starts here. Create your first whiteboard and bring your ideas to life with powerful collaboration tools.'
+                : 'Create your first whiteboard to start collaborating with your team.'
               }
             </p>
             {!searchQuery && (
-              <div className="space-y-4">
-                <Button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-700 hover:to-brand-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 text-lg"
-                >
-                  <PlusIcon className="w-6 h-6 mr-3" />
-                  Create Your First Whiteboard
-                </Button>
-                <p className="text-sm text-gray-500">
-                  Or explore our{' '}
-                  <button className="text-blue-600 hover:text-blue-700 font-medium underline">
-                    template gallery
-                  </button>
-                </p>
-              </div>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-gradient-to-r from-blue-600 to-brand-600 hover:from-blue-700 hover:to-brand-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <PlusIcon className="w-5 h-5 mr-2" />
+                Create Your First Whiteboard
+              </Button>
             )}
           </div>
         ) : (
@@ -386,12 +298,10 @@ const Dashboard = () => {
             {filteredBoards.map((board, index) => (
               <Card 
                 key={board._id} 
-                className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-0 bg-white/90 backdrop-blur-sm overflow-hidden"
+                className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 bg-white/80 backdrop-blur-sm"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-brand-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
-                <CardHeader className="pb-3 relative">
+                <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="text-lg font-semibold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
@@ -412,77 +322,93 @@ const Dashboard = () => {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="pt-0 relative">
+                <CardContent className="pt-0">
                   {/* Board Preview */}
                   <Link to={`/whiteboard/${board._id}`}>
-                    <div className="w-full h-40 bg-gradient-to-br from-blue-50 via-brand-50 to-blue-100 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 transition-all duration-300 flex items-center justify-center mb-4 cursor-pointer group-hover:shadow-lg relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-brand-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="text-center relative z-10">
+                    <div className="w-full h-40 bg-gradient-to-br from-blue-50 via-brand-50 to-blue-100 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 transition-all duration-300 flex items-center justify-center mb-4 cursor-pointer group-hover:shadow-lg">
+                      <div className="text-center">
                         <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
                           <PencilIcon className="w-6 h-6 text-white" />
                         </div>
-                        <p className="text-sm text-gray-500 font-medium group-hover:text-gray-700 transition-colors">Click to open</p>
+                        <p className="text-sm text-gray-500 font-medium">Click to open</p>
                       </div>
                     </div>
                   </Link>
                   
                   {/* Board Info */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2 text-gray-500">
-                        <CalendarIcon className="w-4 h-4" />
-                        <span>{getTimeAgo(board.updatedAt)}</span>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center">
+                        <CalendarIcon className="w-3 h-3 mr-1" />
+                        {getTimeAgo(board.updatedAt)}
                       </div>
-                      <div className="flex items-center space-x-1">
-                        {board.collaborators && board.collaborators.length > 0 && (
-                          <div className="flex items-center space-x-1 text-gray-500">
-                            <UsersIcon className="w-4 h-4" />
-                            <span className="text-xs">{board.collaborators.length}</span>
-                          </div>
-                        )}
-                        {board.isStarred && (
-                          <StarIcon className="w-4 h-4 text-amber-500 fill-current" />
-                        )}
+                      <div className="flex items-center">
+                        <UsersIcon className="w-3 h-3 mr-1" />
+                        {board.collaborators?.length || 0}
                       </div>
                     </div>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex space-x-1">
+                      <button
+                        title="Share"
+                        onClick={() => handleShareBoard(board._id, board.title)}
+                        className="p-2 rounded-lg hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-all duration-200"
+                      >
+                        <ShareIcon className="w-4 h-4" />
+                      </button>
+                      
+                      <button
+                        title="Duplicate"
+                        onClick={() => handleDuplicateBoard(board._id, board.title)}
+                        className="p-2 rounded-lg hover:bg-green-50 text-gray-500 hover:text-green-600 transition-all duration-200"
+                      >
+                        <DocumentDuplicateIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        title="Analytics"
+                        onClick={() => handleShowAnalytics(board._id, board.title)}
+                        className="p-2 rounded-lg hover:bg-yellow-50 text-gray-500 hover:text-yellow-600 transition-all duration-200"
+                      >
+                        <ChartBarIcon className="w-4 h-4" />
+                      </button>
+                    </div>
                     
-                    {/* Action Buttons */}
-                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleShareBoard(board._id, board.title);
-                        }}
-                        className="flex-1 h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50"
+                    <div className="flex space-x-1">
+                      {board.archived ? (
+                        <button
+                          title="Restore"
+                          onClick={() => handleRestoreBoard(board._id)}
+                          className="p-2 rounded-lg hover:bg-green-50 text-gray-500 hover:text-green-600 transition-all duration-200"
+                        >
+                          <ArrowRightIcon className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          title="Archive"
+                          onClick={() => handleArchiveBoard(board._id)}
+                          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-all duration-200"
+                        >
+                          <FolderIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        title="Rename"
+                        className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-all duration-200"
+                        onClick={() => navigate(`/whiteboard/${board._id}`)}
                       >
-                        <ShareIcon className="w-3 h-3 mr-1" />
-                        Share
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleDuplicateBoard(board._id, board.title);
-                        }}
-                        className="flex-1 h-8 text-xs border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      
+                      <button
+                        title="Delete"
+                        onClick={() => handleDeleteBoard(board._id, board.title)}
+                        className="p-2 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600 transition-all duration-200"
                       >
-                        <DocumentDuplicateIcon className="w-3 h-3 mr-1" />
-                        Copy
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleDeleteBoard(board._id, board.title);
-                        }}
-                        className="h-8 px-2 border-red-200 text-red-600 hover:bg-red-50"
-                      >
-                        <TrashIcon className="w-3 h-3" />
-                      </Button>
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </CardContent>

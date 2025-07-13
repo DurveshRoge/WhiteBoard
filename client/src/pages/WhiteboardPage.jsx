@@ -904,6 +904,11 @@ const WhiteboardPage = () => {
   };
   
   const handleMouseDown = (e) => {
+    // Prevent default touch behaviors on mobile
+    if (e.evt && e.evt.type && e.evt.type.startsWith('touch')) {
+      e.evt.preventDefault();
+    }
+    
     console.log('handleMouseDown called with tool:', tool);
     
     // Deselect when clicking on the stage
@@ -1103,6 +1108,11 @@ const WhiteboardPage = () => {
   };
 
   const handleMouseMove = (e) => {
+    // Prevent default touch behaviors on mobile
+    if (e.evt && e.evt.type && e.evt.type.startsWith('touch')) {
+      e.evt.preventDefault();
+    }
+    
     // Handle connector preview
     if (connectorMode && connectorStart) {
       const stage = e.target.getStage();
@@ -1258,6 +1268,11 @@ const WhiteboardPage = () => {
   };
 
   const handleMouseUp = (e) => {
+    // Prevent default touch behaviors on mobile
+    if (e.evt && e.evt.type && e.evt.type.startsWith('touch')) {
+      e.evt.preventDefault();
+    }
+    
     // Handle connector end
     if (connectorMode && connectorStart) {
       const stage = e.target.getStage();
@@ -2346,7 +2361,7 @@ const WhiteboardPage = () => {
   }
 
   return (
-    <div className="h-screen bg-gray-100 flex flex-col">
+    <div className="h-screen bg-gray-100 flex flex-col" style={{ touchAction: 'none' }}>
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -3145,6 +3160,9 @@ const WhiteboardPage = () => {
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onTouchStart={handleMouseDown}
+            onTouchMove={handleMouseMove}
+            onTouchEnd={handleMouseUp}
             onWheel={handleWheel}
             scaleX={zoom}
             scaleY={zoom}
@@ -3235,6 +3253,7 @@ const WhiteboardPage = () => {
                     }
                     onClick={tool === 'select' && !isLocked ? () => handleShapeSelect(line.id) : undefined}
                     onTap={tool === 'select' && !isLocked ? () => handleShapeSelect(line.id) : undefined}
+                    onTouchStart={tool === 'select' && !isLocked ? () => handleShapeSelect(line.id) : undefined}
                   />
                 );
               })}
@@ -3253,6 +3272,7 @@ const WhiteboardPage = () => {
                   id: shape.id.toString(),
                   onClick: tool === 'select' && !isLocked ? () => handleShapeSelect(shape.id) : undefined,
                   onTap: tool === 'select' && !isLocked ? () => handleShapeSelect(shape.id) : undefined,
+                  onTouchStart: tool === 'select' && !isLocked ? () => handleShapeSelect(shape.id) : undefined,
                   opacity: isLocked ? opacity * 0.7 : opacity,
                   draggable: tool === 'select' && !isLocked,
                   onDragEnd: (e) => {
@@ -3409,6 +3429,12 @@ const WhiteboardPage = () => {
                           setTextValue(shape.text);
                           setIsTextEditing(true);
                         }}
+                        onDblTap={() => {
+                          // Enable text editing mode for mobile
+                          setSelectedIds([shape.id]);
+                          setTextValue(shape.text);
+                          setIsTextEditing(true);
+                        }}
                       />
                       {selectedIds.includes(shape.id) && (
                         <Transformer
@@ -3452,6 +3478,11 @@ const WhiteboardPage = () => {
                         width={shape.width - 16}
                         draggable={false}
                         onDblClick={() => {
+                          setSelectedIds([shape.id]);
+                          setTextValue(shape.text);
+                          setIsTextEditing(true);
+                        }}
+                        onDblTap={() => {
                           setSelectedIds([shape.id]);
                           setTextValue(shape.text);
                           setIsTextEditing(true);

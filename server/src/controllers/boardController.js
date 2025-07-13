@@ -156,9 +156,32 @@ export const getBoard = async (req, res, next) => {
       console.log('Access granted to board:', board.title);
     }
 
+    // Migrate any existing eraser elements to the new format
+    if (board.elements && board.elements.length > 0) {
+      board.elements.forEach(element => {
+        if (element.type === 'eraser') {
+          element.type = 'pen';
+          element.tool = 'eraser';
+        }
+      });
+    }
+    
     // Increment view count
     board.stats.views += 1;
-    await board.save();
+    
+    // Use findOneAndUpdate to avoid version conflicts
+    await Board.findOneAndUpdate(
+      { _id: req.params.id },
+      { 
+        elements: board.elements,
+        'stats.views': board.stats.views
+      },
+      { 
+        new: true,
+        runValidators: true,
+        version: false
+      }
+    );
 
     // Determine user permissions
     const permissions = userId ? {
