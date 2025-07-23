@@ -52,7 +52,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/ai/suggestions', {
+      const response = await axios.post('api/ai/suggestions', {
         description: description.trim(),
         boardContext: boardTitle
       });
@@ -76,7 +76,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/ai/flowchart', {
+      const response = await axios.post('api/ai/flowchart', {
         description: description.trim()
       });
 
@@ -99,7 +99,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/ai/analyze', {
+      const response = await axios.post('api/ai/analyze', {
         elements: elements,
         boardTitle: boardTitle
       });
@@ -123,7 +123,7 @@ const AIAssistant = ({
 
     setLoading(true);
     try {
-      const response = await axios.post('/ai/text-suggestions', {
+      const response = await axios.post('api/ai/text-suggestions', {
         context: context.trim(),
         currentText: currentText.trim()
       });
@@ -142,7 +142,7 @@ const AIAssistant = ({
   const generateColorScheme = async () => {
     setLoading(true);
     try {
-      const response = await axios.post('/ai/color-scheme', {
+      const response = await axios.post('api/ai/color-scheme', {
         boardType: boardType
       });
 

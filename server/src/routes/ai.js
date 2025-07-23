@@ -27,6 +27,15 @@ router.post('/suggestions', [
 
     const { description, boardContext = '' } = req.body;
 
+    // Check if AI service is available
+    if (!aiService.isAIServiceAvailable()) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI service is currently unavailable. Please check if API keys are configured.',
+        error: 'AI_SERVICE_UNAVAILABLE'
+      });
+    }
+
     const suggestions = await aiService.generateDrawingSuggestions(description, boardContext);
 
     res.status(200).json({
@@ -34,6 +43,7 @@ router.post('/suggestions', [
       data: suggestions
     });
   } catch (error) {
+    console.error('Error in /api/ai/suggestions:', error);
     next(error);
   }
 });
@@ -56,6 +66,15 @@ router.post('/flowchart', [
 
     const { description } = req.body;
 
+    // Check if AI service is available
+    if (!aiService.isAIServiceAvailable()) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI service is currently unavailable. Please check if API keys are configured.',
+        error: 'AI_SERVICE_UNAVAILABLE'
+      });
+    }
+
     const flowchart = await aiService.generateFlowchart(description);
 
     res.status(200).json({
@@ -63,6 +82,7 @@ router.post('/flowchart', [
       data: flowchart
     });
   } catch (error) {
+    console.error('Error in /api/ai/flowchart:', error);
     next(error);
   }
 });

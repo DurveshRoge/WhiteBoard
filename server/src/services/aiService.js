@@ -39,6 +39,12 @@ function initializeAIServices() {
   initialized = true;
 }
 
+// Check if any AI service is available
+function isAIServiceAvailable() {
+  initializeAIServices(); // Ensure services are initialized
+  return !!(genAI || openai);
+}
+
 // Helper function to extract and parse JSON from Gemini responses
 function extractJsonFromGeminiResponse(text) {
   try {
@@ -71,6 +77,12 @@ class AIService {
     if (!initialized) {
       initializeAIServices();
     }
+  }
+
+  // Check if AI service is available
+  isAIServiceAvailable() {
+    this.ensureInitialized();
+    return !!(genAI || openai);
   }
 
   // Generate drawing suggestions based on text description
@@ -797,5 +809,5 @@ Include primary colors for main elements, secondary colors for highlights, backg
 
 const aiService = new AIService();
 
-export { initializeAIServices };
+export { initializeAIServices, isAIServiceAvailable };
 export default aiService;
