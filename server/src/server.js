@@ -159,6 +159,9 @@ app.use('/api/ai', aiRoutes);
 app.get('/ping', (req, res) => {
   res.status(200).send('OK');
 });
+app.get('/', (req, res) => {
+  res.status(200).send('OK');
+});
 
 
 // Health check endpoint
