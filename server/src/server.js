@@ -155,6 +155,12 @@ app.use('/api/boards', boardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 
+//cron-job test 
+app.get('/ping', (req, res) => {
+  res.status(200).send('OK');
+});
+
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
